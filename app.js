@@ -8,11 +8,6 @@ const cors = require('cors');
 const passport = require('passport');
 require('./configuration/passportConfig');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-const messageRouter = require('./routes/messages');
-const groupRouter = require('./routes/groups')
-
 var app = express();
 
 // view engine setup
@@ -29,10 +24,14 @@ app.options('*', cors());
 
 app.use(passport.initialize());
 
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
+const messagesRouter = require('./routes/messages');
+const groupRouter = require('./routes/groups')
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/messages', messageRouter);
-app.use('/groups', groupRouter)
+app.use('/groups', groupRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -50,4 +49,4 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+module.exports = { app, messagesRouter };

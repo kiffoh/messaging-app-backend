@@ -1,37 +1,49 @@
 #!/usr/bin/env node
 
-/**
- * Module dependencies.
- */
-
-var app = require('../app');
+var { app, messagesRouter } = require('../app');
 var debug = require('debug')('server:server');
 var http = require('http');
-
-/**
- * Get port from environment and store in Express.
- */
+const { Server } = require('socket.io');
 
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-/**
- * Create HTTP server.
- */
-
 var server = http.createServer(app);
 
-/**
- * Listen on provided port, on all network interfaces.
- */
+// Initialize socket.io server
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  },
+});
+
+// Set up basic socket connection
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  // Listen for message updates
+  socket.on('messageUpdated', (updatedMessage) => {
+    io.emit('messageUpdated', updatedMessage); // Broadcast to all clients
+  });
+
+  // Handle message deletion
+  socket.on('messageDeleted', (deletedMessageId) => {
+    io.emit('messageDeleted', deletedMessageId); // Broadcast to all clients
+  });
+
+  // Disconnect event
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
+// Configure messages routes with io
+app.use('/messages', messagesRouter(io));
 
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
-
-/**
- * Normalize a port into a number, string, or false.
- */
 
 function normalizePort(val) {
   var port = parseInt(val, 10);
@@ -48,10 +60,6 @@ function normalizePort(val) {
 
   return false;
 }
-
-/**
- * Event listener for HTTP server "error" event.
- */
 
 function onError(error) {
   if (error.syscall !== 'listen') {
@@ -76,10 +84,6 @@ function onError(error) {
       throw error;
   }
 }
-
-/**
- * Event listener for HTTP server "listening" event.
- */
 
 function onListening() {
   var addr = server.address();
