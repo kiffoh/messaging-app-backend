@@ -15,11 +15,9 @@
 - [Deployment](#deployment)
 
 # Introduction
-**EasyMessage** is a web application for direct and group messaging, inspired by WhatsApp. This project is one of the final projects in the [Odin Project](https://www.theodinproject.com/lessons/nodejs-messaging-app) and through it, I have deepened my understanding of key concepts like authentication, media sharing, and real-time server-client communication.
+**EasyMessage** is a web application for direct and group messaging, inspired by WhatsApp. This project is one of the final projects in the [Odin Project](https://www.theodinproject.com/lessons/nodejs-messaging-app), and building it deepened my understanding of authentication, media handling and real-time client-server communication.
 
-The backend is built with Node.js and leverages Prisma ORM for efficient database management. It serves as the backbone of the app, handling all requests from the frontend via a RESTful API, maintaining and querying the database, and orchestrating real-time messaging with Socket.IO. The backend ensures secure authentication using JWT, facilitates smooth user and group management, and guarantees reliable, real-time communication between users, whether for direct messages or group chats.
-
-This architecture not only emphasises best practices in database interaction and API design but also ensures scalability and maintainability as the application grows.
+The backend is built with Express and Prisma (PostgreSQL), and exposes a REST API for users, groups and messages. Controllers that create, update or delete a message also emit a Socket.IO event (`newMessage`, `messageUpdated`, `messageDeleted`) so connected clients update without polling. Authentication uses Passport's Local Strategy with JWTs, and passwords are hashed with bcrypt before being stored.
 
 # Features
 
@@ -127,7 +125,7 @@ DEBUG=easymessage:* npm run dev
 
 # API Documentation
 
-This document outlines all available endpoints in the application. The API is organized into four main sections:
+This document outlines all available endpoints in the application. The API is organized into three main sections:
 - Users
 - Groups
 - Messages
@@ -808,13 +806,13 @@ npm test
 ```
 
 ### Group Deletion Tests
-- **Test Description**: These tests verify that when a group is deleted, all associated data such as messages and message receipts are correctly removed, and users are disconnected from the group.
+- **Test Description**: These tests verify that when a group is deleted, its messages are removed and its members and admins are disconnected from it.
 The following cases are covered:
-- The group and its related data (messages, message receipts) should be deleted.
+- The group and its messages should be deleted.
 - Users should be disconnected from the group as members or admins.
 
 ### User Deletion Tests
-- **Test Description**: These tests verify that when a user is deleted, the associated group data is updated accordingly, including checking that the user is no longer a member or admin of any group, and their direct messages (DMs) and related receipts are properly handled.
+- **Test Description**: These tests verify that when a user is deleted, the associated group data is updated accordingly, including checking that the user is no longer a member or admin of any group, and their direct messages (DMs) reflect their removal.
 The following cases are covered:
 - The user is successfully deleted.
 - After deletion, the groups and DMs associated with the user reflect the removal of that user (e.g., admin status removed, members reduced).
