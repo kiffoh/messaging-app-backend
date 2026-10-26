@@ -81,6 +81,7 @@ npm run migrate:deploy   # apply migrations
 npm run dev              # development server (tsx watch, reads .env)
 npm run build && npm start   # production: compile to dist/, then run
 npm run db:seed          # sample data (needs users johndoe and janedoe to exist)
+npm run db:seed:guest    # demo "guest" account (guest / iamaguest) with contacts, groups and messages
 npm run db:reset         # delete all users, groups and messages
 npm test
 ```

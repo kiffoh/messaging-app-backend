@@ -10,7 +10,8 @@
     "migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx --env-file=.env prisma/createData.ts",
     "db:reset": "tsx --env-file=.env prisma/refreshDatabase.ts",
-    "test": "node --env-file=.env ./node_modules/vitest/vitest.mjs run"
+    "test": "node --env-file=.env ./node_modules/vitest/vitest.mjs run",
+    "db:seed:guest": "tsx --env-file=.env prisma/seedGuest.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",

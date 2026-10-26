@@ -6,38 +6,38 @@ const defaultGroupPicture = env.DEFAULT_GROUP_PICTURE;
 
 async function main() {
   /* Create Users
+  */
   const user1 = await prisma.user.create({
     data: {
       username: 'johndoe',
       password: 'password123', // You would hash this in real scenarios
     },
   });
- 
+
   const user2 = await prisma.user.create({
     data: {
       username: 'janedoe',
       password: 'password456',
     },
   });
- 
+
   const test9 = await prisma.user.create({
     data: {
-    username: 'test9',
-    
+      username: 'test9',
+      password: 'password456'
     }
   })
-  */
-    const user1 = await prisma.user.findUnique({
-        where: {
-            username: 'johndoe'
-        }
-    })
+  // const user1 = await prisma.user.findUnique({
+  //     where: {
+  //         username: 'johndoe'
+  //     }
+  // })
 
-    const user2 = await prisma.user.findUnique({
-        where: {
-            username: 'janedoe'
-        }
-     })
+  // const user2 = await prisma.user.findUnique({
+  //     where: {
+  //         username: 'janedoe'
+  //     }
+  //  })
 
   if (!user1 || !user2) throw new Error("Seed users johndoe and janedoe must exist first");
 
@@ -47,11 +47,11 @@ async function main() {
       name: 'Study Group',
       directMsg: false,
       members: {
-        connect: [{ id: user1.id }, { id: user2.id }, {id: 9}],
+        connect: [{ id: user1.id }, { id: user2.id }, { id: 9 }],
       },
       photo: defaultGroupPicture,
       admins: {
-        connect: {id: user1.id}
+        connect: { id: user1.id }
       }
     },
   });
@@ -126,18 +126,18 @@ async function main() {
       authorId: 10,
       groupId: directMessageChat2.id,
     },
-  }); 
+  });
 
   // Create Direct Message Chat
   const groupChat2 = await prisma.group.create({
     data: {
       directMsg: false,
       members: {
-        connect: [{ id: 9 }, { id: 10 }, {id: 8}, {id:6}],
+        connect: [{ id: 9 }, { id: 10 }, { id: 8 }, { id: 6 }],
       },
       photo: defaultGroupPicture,
       admins: {
-        connect: {id: 9}
+        connect: { id: 9 }
       }
     },
   });
@@ -156,7 +156,7 @@ async function main() {
     where: { id: 9 },
     data: {
       contacts: {
-        connect: [{ id: user1.id }, { id: user2.id }, { id: 1}, { id: 12}, { id: 2}, { id: 3}] // Add any users you'd like to user 9's contact list
+        connect: [{ id: user1.id }, { id: user2.id }, { id: 1 }, { id: 12 }, { id: 2 }, { id: 3 }] // Add any users you'd like to user 9's contact list
       }
     }
   });
