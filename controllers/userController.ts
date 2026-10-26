@@ -1,10 +1,13 @@
-const { PrismaClient } = require('@prisma/client')
+import type { Request, Response, NextFunction } from "express";
+import type { Server } from "socket.io";
+import { PrismaClient, type User } from "@prisma/client";
+import { env } from "../config/env.js";
 const prisma = new PrismaClient();
-const bcrypt = require('bcrypt')
-const passport = require('passport');
-const jwt = require('jsonwebtoken');
+import bcrypt from 'bcrypt';
+import passport from 'passport';
+import jwt from 'jsonwebtoken';
 
-function formatDateTime (isoString) {
+function formatDateTime (isoString: string | Date) {
     const date = new Date(isoString);
 
     const day = String(date.getUTCDate()).padStart(2, '0');
@@ -23,7 +26,7 @@ function formatDateTime (isoString) {
     };
 }
 
-async function createUser(req, res) {
+async function createUser(req: Request, res: Response) {
     try {
         const {username, password} = req.body;
 
@@ -49,12 +52,12 @@ async function createUser(req, res) {
                 createdAtTime: formattedDateTime.time, 
                 photo: user.photo 
             },
-            process.env.SECRET_KEY, // Use your secret key from environment variables
+            env.SECRET_KEY, // Use your secret key from environment variables
             { expiresIn: '1h' } // Token expires in 1 hour
         );
 
         return res.status(201).json({ user, token }); // Return both user and token
-    } catch (error) {
+    } catch (error: any) {
         // Handle specific error cases
         if (error.code === 'P2002') {
             return res.status(409).json({ 
@@ -79,8 +82,8 @@ async function createUser(req, res) {
     }
 }
 
-function logIn(req, res, next) {
-    passport.authenticate('local', {session: false}, (err, user, info) => {
+function logIn(req: Request, res: Response, next: NextFunction) {
+    passport.authenticate('local', {session: false}, (err: unknown, user: User | false, info: unknown) => {
         if (err) {
             console.error('Authentication error:', err);  // Log authentication errors
             return next(err);
@@ -96,7 +99,7 @@ function logIn(req, res, next) {
         // Authenticate user
         const token = jwt.sign(
             { id: user.id, username: user.username, bio: user.bio, createdAtDate: formattedDateTime.date, createdAtTime: formattedDateTime.time, photo: user.photo },
-            process.env.SECRET_KEY,
+            env.SECRET_KEY,
             {expiresIn: '1hr'}
         )
     
@@ -105,7 +108,7 @@ function logIn(req, res, next) {
     })(req, res, next);
 }
 
-async function getUser(req, res) {
+async function getUser(req: Request, res: Response) {
     const {userId} = req.params;
     const userID = parseInt(userId)
 
@@ -140,7 +143,7 @@ async function getUser(req, res) {
     }
 }
 
-async function getAllUsernames(req, res) {
+async function getAllUsernames(req: Request, res: Response) {
     try {
         const users = await prisma.user.findMany({
             select: {
@@ -156,7 +159,7 @@ async function getAllUsernames(req, res) {
         const updatedUsers = users.map(user => {
             return {
                 ...user,
-                photo: user.photo || process.env.DEFAULT_PICTURE
+                photo: user.photo || env.DEFAULT_PICTURE
             }
         })
 
@@ -166,7 +169,7 @@ async function getAllUsernames(req, res) {
     }
 }
 
-async function updateUser(req, res) {
+async function updateUser(req: Request, res: Response) {
     const {userId} = req.params;
     const {username, bio} = req.body;
     const photo = req.file ? req.file.path : undefined;
@@ -198,7 +201,7 @@ async function updateUser(req, res) {
 
         res.status(200).json(updatedUserFormatted);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error updating user profile:", error);
 
         // Handle specific error cases
@@ -217,7 +220,7 @@ async function updateUser(req, res) {
     }
 }
 
-async function updateUserContacts(req, res) {
+async function updateUserContacts(req: Request, res: Response) {
     const {userId} = req.params;
     const {selectedContacts} = req.body;
 
@@ -228,7 +231,7 @@ async function updateUserContacts(req, res) {
             },
             data: {
                 contacts: {
-                    connect: selectedContacts.map(contactId => ({id: contactId}))
+                    connect: selectedContacts.map((contactId: number) => ({id: contactId}))
                 }
             },
             include: {
@@ -255,7 +258,7 @@ async function updateUserContacts(req, res) {
     }
 }
 
-async function deleteUser(req, res) {
+async function deleteUser(req: Request, res: Response) {
     const {userId} = req.params;
     const userID = parseInt(userId);
 
@@ -280,7 +283,7 @@ async function deleteUser(req, res) {
     }
 }
 
-module.exports = {
+export {
     createUser,
     logIn,
     getUser,

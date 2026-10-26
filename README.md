@@ -61,61 +61,29 @@ Ensure the following software is installed before proceeding:
     ```
 
 # **Environment Setup**
-To set up your environment, create a `.env` file in the root directory of your project. This file should contain the following required environment variables, along with descriptions for each:
+Copy `.env.example` to `.env` in the root directory and fill in the values. All of these are required; the server exits at startup and lists any that are missing (see `config/env.ts`).
 
-### Server Configuration
-- **NODE_ENV**: Set to `development` or `production` to specify the environment.
-- **SECRET_KEY**: Secret key for signing tokens
+- **DATABASE_URL**: PostgreSQL connection string (`docker compose up -d` starts a local database that matches the example value)
 - **FRONTEND_URL**: URL for your frontend application
-
-### Database Configuration
-- **DATABASE_URL**: Connection string for your database
-
-### Media Storage
-- **CLOUDINARY_URL**: Cloudinary URL for media uploads
-- **CLOUDINARY_API_KEY**: Cloudinary API key
-- **CLOUDINARY_API_SECRET**: Cloudinary API secret
-- **CLOUDINARY_CLOUD_NAME**: Cloudinary cloud name
-
-### Default Assets
+- **SECRET_KEY**: Secret key for signing tokens
 - **DEFAULT_PICTURE**: Default profile picture URL
 - **DEFAULT_GROUP_PICTURE**: Default group picture URL
+- **CLOUDINARY_CLOUD_NAME**, **CLOUDINARY_API_KEY**, **CLOUDINARY_API_SECRET**: Cloudinary credentials for media uploads
 
-If you want to have separate environment files for production and development, you can create `.env.production` and `.env.development`. You will also need to set the `NODE_ENV` variable in the command line or use the `cross-env` package (already a dependency) for Windows users. 
-
-### Example `.env.development` File
-```bash
-NODE_ENV=development
-DATABASE_URL=database-url
-FRONTEND_URL=api-url
-SECRET_KEY='your-secret-key'
-DEFAULT_PICTURE=relative/url-to-default-profile-picture
-DEFAULT_GROUP_PICTURE=relative/url-to-default-group-picture
-CLOUDINARY_URL=cloudinary-url
-CLOUDINARY_API_KEY=cloudinary-api-key
-CLOUDINARY_API_SECRET=cloudinary-api-secret
-CLOUDINARY_CLOUD_NAME=cloudinary-cloud-name
-```
-
-### Notes
-- Ensure that you replace the placeholder values with your actual configuration.
-- Keep your `.env` file out of version control by adding it to your `.gitignore`.
+`.env` is gitignored. In production, set these as real environment variables on your host instead of using a file. `PORT` is optional (default 3000).
 
 # **Running the Project**
 
-To run the development server, use the following command:
-```bash
-npm run dev
+Requires Node 20.6+ (uses `--env-file`).
 
-```
-To run the production server, execute:
 ```bash
-npm start
+npm run migrate:deploy   # apply migrations
+npm run dev              # development server (tsx watch, reads .env)
+npm run build && npm start   # production: compile to dist/, then run
+npm run db:seed          # sample data (needs users johndoe and janedoe to exist)
+npm run db:reset         # delete all users, groups and messages
+npm test
 ```
-
-### Notes
-- The cross-env package is included in the above commands. If you are using macOS or Linux, you can remove cross-env from the package.json scripts, as it is only necessary for Windows users.
-- Ensure that you have all environment variables set up correctly before starting the servers.
 
 ### Debugging
 To run with debug logs:

@@ -1,23 +1,8 @@
-if (process.env.DATABASE_URL === undefined) {
-  // Environment config
-  const dotenv = require('dotenv');
-  const path = require('path')
-
-  // Determine which .env file to load based on NODE_ENV
-  const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env';
-
-  // Load the environment variables
-  dotenv.config({ path: path.resolve(process.cwd(), envFile) });
-
-  console.log(`Current environment: ${process.env.NODE_ENV || 'default'}`);
-
-  console.log("Database URL: ", process.env.FRONTEND_URL)
-}
-
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
+import { env } from "../config/env.js";
 const prisma = new PrismaClient();
-const defaultPicture = process.env.DEFAULT_PICTURE;
-const defaultGroupPicture = process.env.DEFAULT_GROUP_PICTURE;
+const defaultPicture = env.DEFAULT_PICTURE;
+const defaultGroupPicture = env.DEFAULT_GROUP_PICTURE;
 
 async function main() {
   /* Create Users
@@ -27,14 +12,14 @@ async function main() {
       password: 'password123', // You would hash this in real scenarios
     },
   });
-
+ 
   const user2 = await prisma.user.create({
     data: {
       username: 'janedoe',
       password: 'password456',
     },
   });
-
+ 
   const test9 = await prisma.user.create({
     data: {
     username: 'test9',
@@ -53,6 +38,8 @@ async function main() {
             username: 'janedoe'
         }
      })
+
+  if (!user1 || !user2) throw new Error("Seed users johndoe and janedoe must exist first");
 
   // Create Group
   const group = await prisma.group.create({
@@ -140,26 +127,6 @@ async function main() {
       groupId: directMessageChat2.id,
     },
   }); 
-
-  // Create Message Receipts
-  const receipt1 = await prisma.messageReceipt.create({
-    data: {
-      messageId: groupMessage1.id,
-      userId: user2.id,
-      delivered: true,
-      read: true,
-      readAt: new Date(),
-    },
-  });
-
-  const receipt2 = await prisma.messageReceipt.create({
-    data: {
-      messageId: directMessage1.id,
-      userId: user2.id,
-      delivered: true,
-      read: false,
-    },
-  });
 
   // Create Direct Message Chat
   const groupChat2 = await prisma.group.create({

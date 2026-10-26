@@ -1,4 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 describe("Group Deletion", () => {

@@ -1,17 +1,17 @@
-var express = require('express');
+import express, { type Request, type Response, type NextFunction } from "express";
 var router = express.Router();
-const groupController = require('../controllers/groupController')
-const { uploadGroupPhoto } = require('../configuration/multerConfig');
-const { validateGroup } = require('../configuration/validation'); // Import the validation middleware
-const { validationResult } = require('express-validator');
+import * as groupController from '../controllers/groupController.js';
+import { uploadGroupPhoto } from '../configuration/multerConfig.js';
+import { validateGroup } from "../configuration/validation.js";
+import { validationResult, type FieldValidationError } from "express-validator";
 
 // Validation middleware
-const validateRequest = (req, res, next) => {
+const validateRequest = (req: Request, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
       status: 'error',
-      errors: errors.array().map(err => ({
+      errors: (errors.array() as FieldValidationError[]).map(err => ({
         field: err.path,
         message: err.msg
       }))
@@ -40,4 +40,4 @@ router.post('/createGroup',
     groupController.createGroup
 );
 
-module.exports = router;
+export default router;

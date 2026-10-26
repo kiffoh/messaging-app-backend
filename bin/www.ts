@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-var { app, server } = require('../app');  // Import both app and server from app.js
-var debug = require('debug')('server:server');
+import { app, server } from "../app.js";
+import createDebug from "debug";
+const debug = createDebug("server:server");
 
 /**
  * Get port from environment and store it in the Express app.
@@ -22,7 +23,7 @@ server.on('listening', onListening);
 /**
  * Normalize a port into a number, string, or false.
  */
-function normalizePort(val) {
+function normalizePort(val: string) {
   var port = parseInt(val, 10);
 
   if (isNaN(port)) {
@@ -39,7 +40,7 @@ function normalizePort(val) {
 /**
  * Event listener for HTTP server "error" event.
  */
-function onError(error) {
+function onError(error: NodeJS.ErrnoException) {
   if (error.syscall !== 'listen') {
     throw error;
   }
@@ -70,6 +71,6 @@ function onListening() {
   var addr = server.address();
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
-    : 'port ' + addr.port;
+    : 'port ' + addr?.port;
   debug('Listening on ' + bind);
 }

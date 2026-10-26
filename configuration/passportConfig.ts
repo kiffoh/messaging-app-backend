@@ -1,10 +1,10 @@
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const {PrismaClient} = require('@prisma/client');
+import passport from 'passport';
+import { Strategy as LocalStrategy } from "passport-local";
+import { PrismaClient, type User } from '@prisma/client';
 const prisma = new PrismaClient();
-const bcrypt = require('bcrypt');
+import bcrypt from 'bcrypt';
 
-async function validatePassword(user, password) {
+async function validatePassword(user: User, password: string) {
     return await bcrypt.compare(password, user.password);
 }
 
@@ -33,5 +33,3 @@ passport.use(new LocalStrategy({
         return done(err);
     }
 }));
-
-module.exports = passport;

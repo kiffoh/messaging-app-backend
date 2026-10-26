@@ -1,7 +1,10 @@
-const { PrismaClient } = require('@prisma/client')
+import type { Request, Response, NextFunction } from "express";
+import type { Server } from "socket.io";
+import { PrismaClient } from '@prisma/client';
+import { env } from "../config/env.js";
 const prisma = new PrismaClient();
 
-function formatDateTime (isoString) {
+function formatDateTime (isoString: string | Date) {
     const date = new Date(isoString);
 
     const day = String(date.getUTCDate()).padStart(2, '0');
@@ -20,7 +23,7 @@ function formatDateTime (isoString) {
     };
 }
 
-async function getGroup(req, res) {
+async function getGroup(req: Request, res: Response) {
     const {groupId} = req.params;
     const groupID = parseInt(groupId)
 
@@ -53,8 +56,8 @@ async function getGroup(req, res) {
          };
 
          if (newGroup.name === null) {
-            const groupUsernames = []
-            group.members.map(member => groupUsernames.push(member.username));
+            const groupUsernames: string[] = []
+            group.members.map((member: any) => groupUsernames.push(member.username));
             newGroup.name = groupUsernames.slice(0, groupUsernames.length - 1).join(', ') + ' & ' + groupUsernames.slice(groupUsernames.length - 1);
          }
 
@@ -65,7 +68,7 @@ async function getGroup(req, res) {
     }
 }
 
-async function createDirectMessage(req, res) {
+async function createDirectMessage(req: Request, res: Response) {
     const { members } = req.body;
     const user = members[0];
 
@@ -82,7 +85,7 @@ async function createDirectMessage(req, res) {
             where: {
                 directMsg,
                 members: {
-                    every: { id: { in: members.map(member => member.id) } }
+                    every: { id: { in: members.map((member: { id: number }) => member.id) } }
                 },
             },
             include: {
@@ -101,7 +104,7 @@ async function createDirectMessage(req, res) {
             data: {
                 directMsg,
                 members: {
-                    connect: members.map(member => ({ id: member.id })),
+                    connect: members.map((member: { id: number }) => ({ id: member.id })),
                 },
             },
         });
@@ -129,12 +132,12 @@ async function createDirectMessage(req, res) {
         console.error('Error creating group:', err);
         res.status(500).json({ 
             status: 'error',
-            message: err.message || 'An unknown error occurred.'
+            message: (err as Error).message || 'An unknown error occurred.'
         });
     }
 }
 
-async function createGroup(req, res) {
+async function createGroup(req: Request, res: Response) {
     const { members } = req.body;
     const parsedMembers = JSON.parse(members); // Parse members once
     const groupCreator = parsedMembers[0] // First member is the user who created the group
@@ -142,7 +145,7 @@ async function createGroup(req, res) {
     // Set the group name: use provided name or generate one
     const groupName = req.body.name || nameGroup(parsedMembers);
 
-    const groupPhotoUrl = req.file ? req.file.path : process.env.DEFAULT_GROUP_PICTURE; // Multer will add file information here
+    const groupPhotoUrl = req.file ? req.file.path : env.DEFAULT_GROUP_PICTURE; // Multer will add file information here
     
     const directMsg = false;
 
@@ -152,7 +155,7 @@ async function createGroup(req, res) {
                 directMsg,
                 name: groupName,
                 members: {
-                    every: { id: { in: parsedMembers.map(member => member.id) } }
+                    every: { id: { in: parsedMembers.map((member: { id: number }) => member.id) } }
                 },
             },
             include: {
@@ -170,7 +173,7 @@ async function createGroup(req, res) {
             data: {
                 name: groupName,
                 members: {
-                    connect: JSON.parse(members).map(member => ({ id: member.id })),
+                    connect: JSON.parse(members).map((member: { id: number }) => ({ id: member.id })),
                 },
                 photo: groupPhotoUrl, // Save the Cloudinary URL for the group photo
                 directMsg: false,
@@ -198,32 +201,32 @@ async function createGroup(req, res) {
     }
 }
 
-function nameGroup(members) {
-    const groupUsernames = []
-    members.map(member => groupUsernames.push(member.username));
+function nameGroup(members: { username: string }[]) {
+    const groupUsernames: string[] = []
+    members.map((member: any) => groupUsernames.push(member.username));
     return groupUsernames.slice(0, groupUsernames.length - 1).join(', ') + ' & ' + groupUsernames.slice(groupUsernames.length - 1);
 }
 
-function personalisedGroupName(group, userID) {
+function personalisedGroupName(group: any, userID: number) {
     if (group.members.length  <= 2) {
-        const recipient = group.members.find(member => member.id !== userID);
+        const recipient = group.members.find((member: { id: number }) => member.id !== userID);
         group.name = recipient.username;
         group.photo = recipient.photo;
     } else {
-        const otherMembers = group.members.filter(member => member.id !== userID);
-        const otherMembersUsernames = []
-        otherMembers.forEach(member => otherMembersUsernames.push(member.username))
+        const otherMembers = group.members.filter((member: { id: number }) => member.id !== userID);
+        const otherMembersUsernames: string[] = []
+        otherMembers.forEach((member: { username: string }) => otherMembersUsernames.push(member.username))
         group.name = otherMembersUsernames.slice(0, otherMembersUsernames.length - 1).join(', ') + ' & ' + otherMembersUsernames.slice(otherMembersUsernames.length - 1);
     }
-    if (group.photo === null) group.photo = process.env.DEFAULT_PICTURE;
+    if (group.photo === null) group.photo = env.DEFAULT_PICTURE;
 }
 
-async function updateGroup(req, res) {
+async function updateGroup(req: Request, res: Response) {
     const {groupId} = req.params;
     const {name, bio} = req.body;
     const photo = req.file ? req.file.path : undefined;
 
-    const updateData = {};
+    const updateData: Record<string, string> = {};
     if (name !== undefined) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
     if (photo !== undefined) updateData.photo = photo;
@@ -254,7 +257,7 @@ async function updateGroup(req, res) {
 
         res.status(200).json(updatedGroupFormatted);
     } catch (error) {
-        console.log(err)
+        console.log(error)
         res.status(500).json({ 
             status: 'error',
             message: 'Error creating group'
@@ -262,15 +265,15 @@ async function updateGroup(req, res) {
     }
 }
 
-async function deleteGroup(req, res) {
+async function deleteGroup(req: Request, res: Response) {
     const {groupId} = req.params;
     const groupID = parseInt(groupId)
-    const userId = parseInt(req.headers['user-id']);
+    const userId = parseInt(req.headers["user-id"] as string);
 
     try {
         const group = await prisma.group.findUnique({
             where: {
-                id: parseInt(groupID)
+                id: groupID
             },
             include: {
                 admins: true
@@ -313,7 +316,7 @@ async function deleteGroup(req, res) {
 }
 
 
-module.exports = {
+export {
     getGroup,
     createDirectMessage,
     createGroup,

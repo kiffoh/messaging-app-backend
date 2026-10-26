@@ -1,4 +1,4 @@
-const { body } = require('express-validator'); // Make sure express-validator is imported
+import { body } from "express-validator";
 
 const validateUserSignUp = [
   body("username").trim()
@@ -19,7 +19,7 @@ const validateGroup = [
     .isLength({ max: 200 }).withMessage('Bio must be a maximum of 200 characters.')
 ];
 
-module.exports = {
+export {
   validateUserSignUp,
   validateUser,
   validateGroup

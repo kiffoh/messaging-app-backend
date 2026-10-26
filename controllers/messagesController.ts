@@ -1,7 +1,10 @@
-const {PrismaClient} = require('@prisma/client');
+import type { Request, Response, NextFunction } from "express";
+import type { Server } from "socket.io";
+import { PrismaClient } from '@prisma/client';
+import { env } from "../config/env.js";
 const prisma = new PrismaClient();
 
-async function getMessages(req, res, next, io) {
+async function getMessages(req: Request, res: Response, next: NextFunction, io: Server) {
     const {userId} = req.params;
     const userID = parseInt(userId)
 
@@ -33,17 +36,17 @@ async function getMessages(req, res, next, io) {
             if (chat.name === null) {
                 if (chat.members.length  <= 2) {
                     const receipient = chat.members.find(member => member.id !== userID);
-                    chat.name = receipient.username;
-                    chat.photo = receipient.photo;
+                    chat.name = receipient!.username;
+                    chat.photo = receipient!.photo;
                 } else {
                     const otherMembers = chat.members.filter(member => member.id !== userID);
-                    const otherMembersUsernames = []
+                    const otherMembersUsernames: string[] = []
                     otherMembers.forEach(member => otherMembersUsernames.push(member.username))
                     chat.name = otherMembersUsernames.slice(0, otherMembersUsernames.length - 1).join(', ') + ' & ' + otherMembersUsernames.slice(otherMembersUsernames.length - 1);
                 }
             }
-            if (chat.photo === null && chat.members.length === 2) chat.photo = process.env.DEFAULT_PICTURE;
-            else if (chat.photo === null) chat.photo = process.env.DEFAULT_GROUP_PICTURE
+            if (chat.photo === null && chat.members.length === 2) chat.photo = env.DEFAULT_PICTURE;
+            else if (chat.photo === null) chat.photo = env.DEFAULT_GROUP_PICTURE
         })
 
         // Merging and sorting by `updatedAt`
@@ -55,7 +58,7 @@ async function getMessages(req, res, next, io) {
     }
 }
 
-async function createMessage(req, res, next, io) {
+async function createMessage(req: Request, res: Response, next: NextFunction, io: Server) {
     const {content, groupId, authorId} = req.body;
     const groupID = parseInt(groupId);
     const authorID = parseInt(authorId)
@@ -83,7 +86,7 @@ async function createMessage(req, res, next, io) {
     }
 }
 
-function mergeSort(arr1, arr2) {
+function mergeSort(arr1: any[], arr2: any[]) {
     if (arr1.length === 0 ) return arr2;
     if (arr2.length === 0) return arr1;
 
@@ -108,7 +111,7 @@ function mergeSort(arr1, arr2) {
     return res;
 }
 
-async function updateMessage(req, res, next, io) {
+async function updateMessage(req: Request, res: Response, next: NextFunction, io: Server) {
     const {content} = req.body;
     const {chatId, messageId} = req.params;
     const messageID = parseInt(messageId);
@@ -135,7 +138,7 @@ async function updateMessage(req, res, next, io) {
 }
 
 
-async function deleteMessage(req, res, next, io) {
+async function deleteMessage(req: Request, res: Response, next: NextFunction, io: Server) {
     const {chatId, messageId} = req.params;
     const messageID = parseInt(messageId);
 
@@ -164,7 +167,7 @@ async function deleteMessage(req, res, next, io) {
 }
 
 
-module.exports = {
+export {
     getMessages,
     createMessage,
     updateMessage,

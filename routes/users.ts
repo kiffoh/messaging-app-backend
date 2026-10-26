@@ -1,18 +1,18 @@
-var express = require('express');
+import express, { type Request, type Response, type NextFunction } from "express";
 var router = express.Router();
-const userController = require('../controllers/userController');
-const {uploadUserPhoto} = require('../configuration/multerConfig')
-const { validateUserSignUp, validateUser } = require('../configuration/validation');
-const { validationResult } = require('express-validator');
+import * as userController from '../controllers/userController.js';
+import { uploadUserPhoto } from '../configuration/multerConfig.js';
+import { validateUserSignUp, validateUser } from '../configuration/validation.js';
+import { validationResult, type FieldValidationError } from "express-validator";
 
 // Validation middleware
-const validateRequest = (req, res, next) => {
+const validateRequest = (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       console.log(errors)
       return res.status(400).json({
         status: 'error',
-        errors: errors.array().map(err => ({
+        errors: (errors.array() as FieldValidationError[]).map(err => ({
           field: err.path,
           message: err.msg
         }))
@@ -48,4 +48,4 @@ router.put('/:userId/update-contacts', userController.updateUserContacts)
 
 
 
-module.exports = router;
+export default router;

@@ -1,12 +1,13 @@
-const express = require('express');
-const messageController = require('../controllers/messagesController');
-const { uploadMessagePhoto } = require('../configuration/multerConfig');
+import type { Server } from "socket.io";
+import express, { type Request, type Response, type NextFunction } from "express";
+import * as messageController from '../controllers/messagesController.js';
+import { uploadMessagePhoto } from '../configuration/multerConfig.js';
 
-module.exports = function(io) {
+export default function(io: Server) {
     const router = express.Router();
 
     // Wrap each controller function to include io
-    const wrapController = (controller) => (req, res, next) => {
+    const wrapController = (controller: (req: Request, res: Response, next: NextFunction, io: Server) => unknown) => (req: Request, res: Response, next: NextFunction) => {
         controller(req, res, next, io);
     };
 
