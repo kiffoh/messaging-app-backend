@@ -1,26 +1,36 @@
-import { body } from "express-validator";
+import type { Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 
-const validateUserSignUp = [
-  body("username").trim()
-    .isLength({ max: 10 }).withMessage('Username must be a maximum of 10 characters.')
-];
+extendZodWithOpenApi(z);
 
-const validateUser = [
-  body("username").trim().optional()
-    .isLength({ max: 10 }).withMessage('Username must be a maximum of 10 characters.'),
-  body("bio").trim().optional()
-    .isLength({ max: 200 }).withMessage('Bio must be a maximum of 200 characters.')
-];
+const username = z.string().trim().max(10, "Username must be a maximum of 10 characters.");
+const bio = z.string().trim().max(200, "Bio must be a maximum of 200 characters.");
+const groupName = z.string().trim().max(20, "Group name must be a maximum of 20 characters.");
 
-const validateGroup = [
-  body("name").trim().optional()
-    .isLength({ max: 20 }).withMessage('Group name must be a maximum of 20 characters.'),
-  body("bio").trim().optional()
-    .isLength({ max: 200 }).withMessage('Bio must be a maximum of 200 characters.')
-];
+export const userSignUpSchema = z.object({ username: username.optional() });
 
-export {
-  validateUserSignUp,
-  validateUser,
-  validateGroup
+export const userSchema = z.object({ username: username.optional(), bio: bio.optional() });
+
+export const groupSchema = z.object({ name: groupName.optional(), bio: bio.optional() });
+
+// Validates req.body and keeps the 400 response shape the client already expects.
+// Parsed values (e.g. trimmed strings) are merged over the body, so fields the schema doesn't list survive.
+export const validate = (schema: z.ZodType) => (req: Request, res: Response, next: NextFunction) => {
+  const result = schema.safeParse(req.body ?? {});
+  if (!result.success) {
+    return res.status(400).json({
+      status: "error",
+      errors: result.error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message,
+      })),
+    });
+  }
+  req.body = { ...req.body, ...(result.data as object) };
+  next();
 };
+
+export const validateUserSignUp = validate(userSignUpSchema);
+export const validateUser = validate(userSchema);
+export const validateGroup = validate(groupSchema);

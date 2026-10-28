@@ -67,6 +67,8 @@ function onError(error: NodeJS.ErrnoException) {
 /**
  * Event listener for HTTP server "listening" event.
  */
+
+// TODO(refactor): Can this be app.on?
 function onListening() {
   var addr = server.address();
   var bind = typeof addr === 'string'
