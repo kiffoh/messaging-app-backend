@@ -1,4 +1,4 @@
-import { env } from "./src/config/env.js";
+import { env } from "./config/env.js";
 import createError from 'http-errors';
 import express, { type Request, type Response, type NextFunction } from "express";
 import path from 'path';
@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import cors from 'cors';
 import passport from 'passport';
-import "./src/configuration/passportConfig.js";
+import "./middleware/passport.js";
 
 // Import socket.io and http
 import { Server } from 'socket.io';
@@ -14,10 +14,12 @@ import http from 'http';
 
 console.log(`Current environment: ${process.env.NODE_ENV || "default"}`);
 
-import indexRouter from './src/routes/index.js';
-import usersRouter from './src/routes/users.js';
-import messageRouter from './src/routes/messages.js';
-import groupRouter from './src/routes/groups.js';
+import swaggerUi from 'swagger-ui-express';
+import { openApiDocument } from './configuration/openapi.js';
+import { mountRoutes } from './configuration/defineRoute.js';
+import { userRoutes } from './routes/users.js';
+import { messageRoutes } from './routes/messages.js';
+import { groupRoutes } from './routes/groups.js';
 
 var app = express();
 
@@ -55,10 +57,11 @@ app.options('*', cors());
 
 app.use(passport.initialize());
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/messages', messageRouter(io));
-app.use('/groups', groupRouter);
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
+
+const router = express.Router();
+mountRoutes(router, [...userRoutes, ...messageRoutes, ...groupRoutes], io);
+app.use(router);
 
 // catch 404 and forward to error handler
 app.use(function(req: Request, res: Response, next: NextFunction) {

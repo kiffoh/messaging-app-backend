@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { app, server } from "../app.js";
+import { app, server } from "../src/app.js";
 import createDebug from "debug";
 const debug = createDebug("server:server");
 

@@ -1,20 +1,70 @@
-import type { Server } from "socket.io";
-import express, { type Request, type Response, type NextFunction } from "express";
-import * as messageController from '../controllers/messagesController.js';
-import { uploadMessagePhoto } from '../configuration/multerConfig.js';
+import * as messageController from "../controllers/messages.controller.js";
+import { uploadMessagePhoto } from "../middleware/multer.js";
+import { defineRoute } from "../configuration/defineRoute.js";
+import { errorOnly, formBody, jsonBody, jsonResponse, messageOnly, textResponse } from "../schemas/common.js";
+import { userIdParams } from "../schemas/user.js";
+import { groupWithMembersAndMessages } from "../schemas/group.js";
+import * as s from "../schemas/message.js";
+import { z } from "zod";
 
-export default function(io: Server) {
-    const router = express.Router();
+const tags = ["Messages"];
 
-    // Wrap each controller function to include io
-    const wrapController = (controller: (req: Request, res: Response, next: NextFunction, io: Server) => unknown) => (req: Request, res: Response, next: NextFunction) => {
-        controller(req, res, next, io);
-    };
+export const messageRoutes = [
+  defineRoute({
+    method: "get",
+    path: "/messages/{userId}",
+    summary: "List every chat a user is in, with members and messages",
+    description: "Newest chat first, newest message first. Unnamed chats are named for this user.",
+    tags,
+    request: { params: userIdParams },
+    responses: {
+      200: jsonResponse("The user's chats", z.array(groupWithMembersAndMessages)),
+      500: textResponse("Internal Server Error"),
+    },
+    handler: messageController.getMessages,
+  }),
 
-    router.get('/:userId', wrapController(messageController.getMessages));
-    router.post('/:chatId', uploadMessagePhoto.single('photoUrl'), wrapController(messageController.createMessage));
-    router.put('/:chatId/:messageId', wrapController(messageController.updateMessage));
-    router.delete('/:chatId/:messageId', wrapController(messageController.deleteMessage));
+  defineRoute({
+    method: "post",
+    path: "/messages/{chatId}",
+    summary: "Send a message",
+    description: "The chat is taken from the groupId field of the body, the chatId in the path is not used. Emits a newMessage socket event.",
+    tags,
+    request: { params: s.chatParams, body: formBody(s.createMessageBody) },
+    responses: {
+      201: jsonResponse("The new message", s.message),
+      500: textResponse("Internal Server Error"),
+    },
+    middleware: [uploadMessagePhoto.single("photoUrl")],
+    handler: messageController.createMessage,
+  }),
 
-    return router;
-};
+  defineRoute({
+    method: "put",
+    path: "/messages/{chatId}/{messageId}",
+    summary: "Edit a message",
+    description: "Emits a messageUpdated socket event.",
+    tags,
+    request: { params: s.messageParams, body: jsonBody(s.updateMessageBody) },
+    responses: {
+      200: jsonResponse("The updated message", s.message),
+      500: jsonResponse("Could not update the message", errorOnly),
+    },
+    handler: messageController.updateMessage,
+  }),
+
+  defineRoute({
+    method: "delete",
+    path: "/messages/{chatId}/{messageId}",
+    summary: "Delete a message",
+    description: "Emits a messageDeleted socket event.",
+    tags,
+    request: { params: s.messageParams },
+    responses: {
+      200: jsonResponse("Deleted", messageOnly),
+      404: jsonResponse("Message not found", messageOnly),
+      500: jsonResponse("Unknown error", messageOnly),
+    },
+    handler: messageController.deleteMessage,
+  }),
+];

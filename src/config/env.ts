@@ -1,21 +1,15 @@
-const required = [
-  'DATABASE_URL',
-  'FRONTEND_URL',
-  'SECRET_KEY',
-  'DEFAULT_PICTURE',
-  'DEFAULT_GROUP_PICTURE',
-  'CLOUDINARY_CLOUD_NAME',
-  'CLOUDINARY_API_KEY',
-  'CLOUDINARY_API_SECRET',
-] as const;
+import z from "zod";
 
-const missing = required.filter((k) => !process.env[k]);
-if (missing.length) {
-  console.error(`Missing required env vars: ${missing.join(', ')}`);
-  process.exit(1);
-}
+export const environmentSchema = z.object({
+  'DATABASE_URL': z.url(),
+  'FRONTEND_URL': z.url(),
+  'SECRET_KEY': z.string(),
+  'DEFAULT_PICTURE': z.url(),
+  'DEFAULT_GROUP_PICTURE': z.url(),
+  'CLOUDINARY_CLOUD_NAME': z.string(),
+  'CLOUDINARY_API_KEY': z.string(),
+  'CLOUDINARY_API_SECRET': z.string(),
+  'PORT': z.number().default(3000),
+})
 
-export const env = Object.fromEntries(required.map((k) => [k, process.env[k]])) as Record<
-  (typeof required)[number],
-  string
->;
+export const env = environmentSchema.parse(process.env);
