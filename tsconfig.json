@@ -8,5 +8,5 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["app.ts", "bin", "config", "configuration", "controllers", "routes", "prisma/*.ts"]
+  "include": ["app.ts", "bin", "src/config", "src/configuration", "src/controllers", "src/routes", "src/prisma/*.ts"]
 }

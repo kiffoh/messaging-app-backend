@@ -1,4 +1,4 @@
-import { env } from "./config/env.js";
+import { env } from "./src/config/env.js";
 import createError from 'http-errors';
 import express, { type Request, type Response, type NextFunction } from "express";
 import path from 'path';
@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import cors from 'cors';
 import passport from 'passport';
-import "./configuration/passportConfig.js";
+import "./src/configuration/passportConfig.js";
 
 // Import socket.io and http
 import { Server } from 'socket.io';
@@ -14,10 +14,10 @@ import http from 'http';
 
 console.log(`Current environment: ${process.env.NODE_ENV || "default"}`);
 
-import indexRouter from './routes/index.js';
-import usersRouter from './routes/users.js';
-import messageRouter from './routes/messages.js';
-import groupRouter from './routes/groups.js';
+import indexRouter from './src/routes/index.js';
+import usersRouter from './src/routes/users.js';
+import messageRouter from './src/routes/messages.js';
+import groupRouter from './src/routes/groups.js';
 
 var app = express();
 
