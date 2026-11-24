@@ -18,5 +18,6 @@ io.on("connection", (socket) => {
 });
 
 export const emitToMembers = (memberIds: number[], event: string, payload: unknown) => {
+  if (memberIds.length === 0) return; // io.to([]) would broadcast to every socket
   io.to(memberIds.map((id) => `user:${id}`)).emit(event, payload);
 };

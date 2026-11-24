@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { io as connect, type Socket } from "socket.io-client";
 import { it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import { app, server } from "../../src/app.js";
-import { io } from "../../src/lib/io.js";
+import { io, emitToMembers } from "../../src/lib/io.js";
 import { prisma } from "../../src/lib/prisma.js";
 import { resetDb } from "../helpers/db.js";
 import { makeUser, makeGroup } from "../helpers/factories.js";
@@ -69,4 +69,14 @@ it("message events reach the group's members only", async () => {
   expect(onBob).toHaveBeenCalledOnce();
   expect(a.connected).toBe(true);
   expect(await prisma.message.count()).toBe(0);
+});
+
+it("emitToMembers with no members reaches nobody", async () => {
+  const alice = await makeUser("alice");
+  const a = await open({ token: alice.token });
+  const spy = vi.fn();
+  a.on("newMessage", spy);
+  emitToMembers([], "newMessage", { content: "hi" });
+  await new Promise((r) => setTimeout(r, 200));
+  expect(spy).not.toHaveBeenCalled();
 });
