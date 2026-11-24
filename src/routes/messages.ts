@@ -1,7 +1,7 @@
 import * as messageController from "../controllers/messages.controller.js";
-import { uploadMessagePhoto } from "../middleware/multer.js";
-import { defineRoute } from "../configuration/defineRoute.js";
-import { messageOnly, formBody, jsonBody, jsonResponse } from "../schemas/common.js";
+import { uploadMessagePhoto } from "../middleware/upload.js";
+import { defineRoute } from "../openapi/defineRoute.js";
+import { messageOnly, formBody, jsonBody, jsonResponse } from "../lib/schemas.js";
 import { userIdParams } from "../schemas/user.js";
 import { groupWithMembersAndMessages } from "../schemas/group.js";
 import * as s from "../schemas/message.js";
@@ -12,6 +12,7 @@ const tags = ["Messages"];
 export const messageRoutes = [
   defineRoute({
     method: "get",
+    auth: false, // until the module is moved onto token auth
     path: "/messages/{userId}",
     summary: "List every chat a user is in, with members and messages",
     description: "Newest chat first, newest message first. Unnamed chats are named for this user.",
@@ -26,6 +27,7 @@ export const messageRoutes = [
 
   defineRoute({
     method: "post",
+    auth: false, // until the module is moved onto token auth
     path: "/messages/{chatId}",
     summary: "Send a message",
     description: "The chat is taken from the groupId field of the body, the chatId in the path is not used. Emits a newMessage socket event.",
@@ -41,6 +43,7 @@ export const messageRoutes = [
 
   defineRoute({
     method: "put",
+    auth: false, // until the module is moved onto token auth
     path: "/messages/{chatId}/{messageId}",
     summary: "Edit a message",
     description: "Emits a messageUpdated socket event.",
@@ -55,6 +58,7 @@ export const messageRoutes = [
 
   defineRoute({
     method: "delete",
+    auth: false, // until the module is moved onto token auth
     path: "/messages/{chatId}/{messageId}",
     summary: "Delete a message",
     description: "Emits a messageDeleted socket event.",

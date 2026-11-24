@@ -5,6 +5,7 @@ import { groupRoutes } from "../routes/groups.js";
 import { messageRoutes } from "../routes/messages.js";
 
 const registry = new OpenAPIRegistry();
+registry.registerComponent("securitySchemes", "bearerAuth", { type: "http", scheme: "bearer", bearerFormat: "JWT" });
 registerRoutes(registry, [...userRoutes, ...groupRoutes, ...messageRoutes]);
 
 export const openApiDocument = new OpenApiGeneratorV31(registry.definitions).generateDocument({

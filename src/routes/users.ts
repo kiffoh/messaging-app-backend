@@ -1,8 +1,8 @@
 import * as userController from "../controllers/user.controller.js";
-import { uploadUserPhoto } from "../middleware/multer.js";
+import { uploadUserPhoto } from "../middleware/upload.js";
 import { userSchema, validateUser, validateUserSignUp } from "../middleware/validation.js";
-import { defineRoute } from "../configuration/defineRoute.js";
-import { badRequest, binary, formBody, jsonBody, jsonResponse, messageOnly } from "../schemas/common.js";
+import { defineRoute } from "../openapi/defineRoute.js";
+import { badRequest, binary, formBody, jsonBody, jsonResponse, messageOnly } from "../lib/schemas.js";
 import * as s from "../schemas/user.js";
 import { z } from "zod";
 
@@ -13,6 +13,7 @@ const updateUserBody = userSchema.extend({ photo: binary.optional().describe("Im
 export const userRoutes = [
   defineRoute({
     method: "post",
+    auth: false, // until the module is moved onto token auth
     path: "/users/signup",
     summary: "Create a user",
     tags,
@@ -29,6 +30,7 @@ export const userRoutes = [
 
   defineRoute({
     method: "post",
+    auth: false, // until the module is moved onto token auth
     path: "/users/login",
     summary: "Log in and receive a JWT",
     tags,
@@ -42,6 +44,7 @@ export const userRoutes = [
 
   defineRoute({
     method: "get",
+    auth: false, // until the module is moved onto token auth
     path: "/users/{userId}/profile",
     summary: "Get a user's profile and contacts",
     tags,
@@ -57,6 +60,7 @@ export const userRoutes = [
 
   defineRoute({
     method: "put",
+    auth: false, // until the module is moved onto token auth
     path: "/users/{userId}/profile",
     summary: "Update a user's username, bio or photo",
     tags,
@@ -73,6 +77,7 @@ export const userRoutes = [
 
   defineRoute({
     method: "delete",
+    auth: false, // until the module is moved onto token auth
     path: "/users/{userId}/profile",
     summary: "Delete a user",
     tags,
@@ -87,6 +92,7 @@ export const userRoutes = [
 
   defineRoute({
     method: "get",
+    auth: false, // until the module is moved onto token auth
     path: "/users/usernames",
     summary: "List every user's id, username and photo",
     tags,
@@ -100,6 +106,7 @@ export const userRoutes = [
 
   defineRoute({
     method: "put",
+    auth: false, // until the module is moved onto token auth
     path: "/users/{userId}/update-contacts",
     summary: "Add contacts to a user",
     tags,

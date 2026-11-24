@@ -1,7 +1,5 @@
-import { app, server } from "./app.js";
+import { server } from "./app.js";
 import { env } from "./config/env.js";
-
-app.set("port", env.PORT);
 
 server.listen(env.PORT, () => console.log("Running on port", env.PORT));
 server.on("error", (error: NodeJS.ErrnoException) => {

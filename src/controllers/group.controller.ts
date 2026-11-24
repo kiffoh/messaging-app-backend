@@ -2,25 +2,7 @@ import type { Request, Response } from "express";
 import type { Group, User } from '@prisma/client';
 import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
-
-function formatDateTime (isoString: string | Date) {
-    const date = new Date(isoString);
-
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const year = date.getUTCFullYear();
-
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-
-    const formattedDate = `${day}-${month}-${year}`;
-    const formattedTime = `${hours}:${minutes}`;
-
-    return {
-        date: formattedDate,
-        time: formattedTime
-    };
-}
+import { withFormattedDate } from "../lib/users.js";
 
 async function getGroup(req: Request, res: Response) {
     const {groupId} = req.params as Record<string, string>;
@@ -44,14 +26,8 @@ async function getGroup(req: Request, res: Response) {
     if (!group) return res.status(404).json({message: 'Group not found.'})
 
      // Format createdAt to desired format
-     const formattedDateTime = formatDateTime(group.createdAt);
-
      // Create a new user object with formatted date and time
-     const newGroup = {
-         ...group,
-         createdAtDate: formattedDateTime.date,
-         createdAtTime: formattedDateTime.time
-     };
+     const newGroup = withFormattedDate(group);
 
      if (newGroup.name === null) {
         const groupUsernames: string[] = []
@@ -219,14 +195,8 @@ async function updateGroup(req: Request, res: Response) {
     })
 
     // Format createdAt to desired format
-    const formattedDateTime = formatDateTime(updatedGroup.createdAt);
-
     // Create a new user object with formatted date and time
-    const updatedGroupFormatted = {
-        ...updatedGroup,
-        createdAtDate: formattedDateTime.date,
-        createdAtTime: formattedDateTime.time
-    };
+    const updatedGroupFormatted = withFormattedDate(updatedGroup);
 
 
     res.status(200).json(updatedGroupFormatted);

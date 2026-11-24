@@ -2,28 +2,10 @@ import type { Request, Response, NextFunction } from "express";
 import { Prisma, type User } from "@prisma/client";
 import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
+import { withFormattedDate } from "../lib/users.js";
 import bcrypt from 'bcrypt';
 import passport from 'passport';
-import jwt from 'jsonwebtoken';
-
-function formatDateTime (isoString: string | Date) {
-    const date = new Date(isoString);
-
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const year = date.getUTCFullYear();
-
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-
-    const formattedDate = `${day}-${month}-${year}`;
-    const formattedTime = `${hours}:${minutes}`;
-
-    return {
-        date: formattedDate,
-        time: formattedTime
-    };
-}
+import { signToken } from '../lib/token.js';
 
 const isUniqueViolation = (error: unknown) =>
     error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
@@ -42,21 +24,8 @@ async function createUser(req: Request, res: Response) {
         })
         
         // Edit createdAt to desired format
-        const formattedDateTime = formatDateTime(user.createdAt);
         
-        // Create JWT token
-        const token = jwt.sign(
-            { 
-                id: user.id, 
-                username: user.username, 
-                bio: user.bio, 
-                createdAtDate: formattedDateTime.date, 
-                createdAtTime: formattedDateTime.time, 
-                photo: user.photo 
-            },
-            env.SECRET_KEY, // Use your secret key from environment variables
-            { expiresIn: '1h' } // Token expires in 1 hour
-        );
+        const token = signToken(user);
 
         return res.status(201).json({ user, token }); // Return both user and token
     } catch (error) {
@@ -80,14 +49,7 @@ function logIn(req: Request, res: Response, next: NextFunction) {
         }
 
         // Edit createdAt to desired format
-        const formattedDateTime = formatDateTime(user.createdAt);
-
-        // Authenticate user
-        const token = jwt.sign(
-            { id: user.id, username: user.username, bio: user.bio, createdAtDate: formattedDateTime.date, createdAtTime: formattedDateTime.time, photo: user.photo },
-            env.SECRET_KEY,
-            {expiresIn: '1hr'}
-        )
+        const token = signToken(user);
     
         // Send the token to the client
         return res.status(200).json({ token, message: 'Login successful' });
@@ -114,14 +76,8 @@ async function getUser(req: Request, res: Response) {
     if (!user) return res.status(404).json({message: 'User not found.'})
 
     // Format createdAt to desired format
-    const formattedDateTime = formatDateTime(user.createdAt);
-
     // Create a new user object with formatted date and time
-    const newUser = {
-        ...user,
-        createdAtDate: formattedDateTime.date,
-        createdAtTime: formattedDateTime.time
-    };
+    const newUser = withFormattedDate(user);
     return res.json(newUser); 
 }
 
@@ -168,14 +124,8 @@ async function updateUser(req: Request, res: Response) {
         })
 
         // Format createdAt to desired format
-        const formattedDateTime = formatDateTime(updatedUser.createdAt);
-
         // Create a new user object with formatted date and time
-        const updatedUserFormatted = {
-            ...updatedUser,
-            createdAtDate: formattedDateTime.date,
-            createdAtTime: formattedDateTime.time
-        };
+        const updatedUserFormatted = withFormattedDate(updatedUser);
 
         res.status(200).json(updatedUserFormatted);
 
@@ -209,14 +159,8 @@ async function updateUserContacts(req: Request, res: Response) {
     })
 
     // Format createdAt to desired format
-    const formattedDateTime = formatDateTime(updatedUser.createdAt);
-
     // Create a new user object with formatted date and time
-    const updatedUserFormatted = {
-        ...updatedUser,
-        createdAtDate: formattedDateTime.date,
-        createdAtTime: formattedDateTime.time
-    };
+    const updatedUserFormatted = withFormattedDate(updatedUser);
 
     res.status(200).json(updatedUserFormatted);
 }

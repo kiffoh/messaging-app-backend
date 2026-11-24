@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
-import type { Server } from "socket.io";
 import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
+import { io } from "../lib/io.js";
 
-async function getMessages(req: Request, res: Response, next: NextFunction, io: Server) {
+async function getMessages(req: Request, res: Response, next: NextFunction) {
     const {userId} = req.params as Record<string, string>;
     const userID = parseInt(userId)
 
@@ -50,7 +50,7 @@ async function getMessages(req: Request, res: Response, next: NextFunction, io: 
     res.json(userMessages);
 }
 
-async function createMessage(req: Request, res: Response, next: NextFunction, io: Server) {
+async function createMessage(req: Request, res: Response, next: NextFunction) {
     const {content, groupId, authorId} = req.body;
     const groupID = parseInt(groupId);
     const authorID = parseInt(authorId)
@@ -72,7 +72,7 @@ async function createMessage(req: Request, res: Response, next: NextFunction, io
     res.status(201).json(newMessage)
 }
 
-async function updateMessage(req: Request, res: Response, next: NextFunction, io: Server) {
+async function updateMessage(req: Request, res: Response, next: NextFunction) {
     const {content} = req.body;
     const {messageId} = req.params as Record<string, string>;
     const messageID = parseInt(messageId);
@@ -93,7 +93,7 @@ async function updateMessage(req: Request, res: Response, next: NextFunction, io
 }
 
 
-async function deleteMessage(req: Request, res: Response, next: NextFunction, io: Server) {
+async function deleteMessage(req: Request, res: Response, next: NextFunction) {
     const {messageId} = req.params as Record<string, string>;
     const messageID = parseInt(messageId);
 

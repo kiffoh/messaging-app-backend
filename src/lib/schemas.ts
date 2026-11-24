@@ -1,7 +1,19 @@
 import { z } from "zod";
-import "../middleware/validation.js"; // extends zod with .openapi()
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+
+extendZodWithOpenApi(z);
 
 export const id = z.number().int();
+// Path params arrive as strings, so they need coercing
+export const idParam = z.coerce.number().int().positive();
+// A list of ids, or the JSON string of one (multipart forms can't send arrays)
+export const idList = z.preprocess(
+  (v) => {
+    if (typeof v !== "string") return v;
+    try { return JSON.parse(v); } catch { return v; } // left as a string, z.array rejects it with a 400
+  },
+  z.array(idParam),
+);
 export const dateTime = z.iso.datetime();
 export const binary = z.string().openapi({ format: "binary" });
 

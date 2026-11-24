@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { id, dateTime, binary } from "./common.js";
+import { id, idParam, dateTime, binary } from "../lib/schemas.js";
 import { user } from "./user.js";
 import { groupSchema } from "../middleware/validation.js";
 import { message } from "./message.js";
 
-export const groupIdParams = z.object({ groupId: id });
+export const groupIdParams = z.object({ groupId: idParam });
 export const userIdHeader = z.object({ "user-id": id.describe("Id of the user making the request") });
 
 // Request bodies

@@ -13,7 +13,7 @@
     "db:reset": "tsx --env-file=.env src/prisma/refreshDatabase.ts",
     "test": "node --env-file=.env.test ./node_modules/vitest/vitest.mjs run",
     "db:seed:guest": "tsx --env-file=.env src/prisma/seedGuest.ts",
-    "openapi": "tsx --env-file=.env src/configuration/generateOpenapi.ts",
+    "openapi": "tsx --env-file=.env src/openapi/generate.ts",
     "pretest": "node --env-file=.env.test ./node_modules/prisma/build/index.js migrate deploy"
   },
   "dependencies": {
@@ -22,7 +22,6 @@
     "bcrypt": "^5.1.1",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
-    "debug": "~2.6.9",
     "express": "^5.3.0",
     "http-errors": "^2.0.1",
     "jsonwebtoken": "^9.0.2",
@@ -38,7 +37,6 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
-    "@types/debug": "^4.1.13",
     "@types/express": "^5.0.6",
     "@types/http-errors": "^2.0.5",
     "@types/jsonwebtoken": "^9.0.10",

@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { id, dateTime } from "./common.js";
+import { id, idParam, dateTime } from "../lib/schemas.js";
 import { userSignUpSchema } from "../middleware/validation.js";
 
-export const userIdParams = z.object({ userId: id });
+export const userIdParams = z.object({ userId: idParam });
 
 // Request bodies. The validators only check lengths, the controllers also need these fields.
 export const signUpBody = userSignUpSchema.required({ username: true }).extend({ password: z.string() });

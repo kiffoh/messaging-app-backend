@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { id, dateTime, binary } from "./common.js";
+import { id, idParam, dateTime, binary } from "../lib/schemas.js";
 
-export const chatParams = z.object({ chatId: id });
-export const messageParams = chatParams.extend({ messageId: id });
+export const chatParams = z.object({ chatId: idParam });
+export const messageParams = chatParams.extend({ messageId: idParam });
 
 export const message = z.object({
   id,

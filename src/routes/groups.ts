@@ -1,8 +1,8 @@
 import * as groupController from "../controllers/group.controller.js";
-import { uploadGroupPhoto } from "../middleware/multer.js";
+import { uploadGroupPhoto } from "../middleware/upload.js";
 import { validateGroup } from "../middleware/validation.js";
-import { defineRoute } from "../configuration/defineRoute.js";
-import { badRequest, formBody, jsonBody, jsonResponse, messageOnly } from "../schemas/common.js";
+import { defineRoute } from "../openapi/defineRoute.js";
+import { badRequest, formBody, jsonBody, jsonResponse, messageOnly } from "../lib/schemas.js";
 import * as s from "../schemas/group.js";
 import { z } from "zod";
 
@@ -11,6 +11,7 @@ const tags = ["Groups"];
 export const groupRoutes = [
   defineRoute({
     method: "get",
+    auth: false, // until the module is moved onto token auth
     path: "/groups/{groupId}/profile",
     summary: "Get a group with its members and admins",
     tags,
@@ -26,6 +27,7 @@ export const groupRoutes = [
 
   defineRoute({
     method: "put",
+    auth: false, // until the module is moved onto token auth
     path: "/groups/{groupId}/profile",
     summary: "Update a group's name, bio or photo",
     tags,
@@ -41,6 +43,7 @@ export const groupRoutes = [
 
   defineRoute({
     method: "delete",
+    auth: false, // until the module is moved onto token auth
     path: "/groups/{groupId}/profile",
     summary: "Delete a group and its messages (admins only)",
     description: "The caller is identified by the user-id header, there is no token check.",
@@ -57,6 +60,7 @@ export const groupRoutes = [
 
   defineRoute({
     method: "post",
+    auth: false, // until the module is moved onto token auth
     path: "/groups/createDirectMessage",
     summary: "Start a direct message chat, or return the existing one",
     tags,
@@ -72,6 +76,7 @@ export const groupRoutes = [
 
   defineRoute({
     method: "post",
+    auth: false, // until the module is moved onto token auth
     path: "/groups/createGroup",
     summary: "Create a group chat",
     description: "Without a name, one is made from the members' usernames. The first member becomes the admin.",
