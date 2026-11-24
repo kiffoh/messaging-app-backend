@@ -2,7 +2,7 @@ import * as userController from "../controllers/user.controller.js";
 import { uploadUserPhoto } from "../middleware/multer.js";
 import { userSchema, validateUser, validateUserSignUp } from "../middleware/validation.js";
 import { defineRoute } from "../configuration/defineRoute.js";
-import { badRequest, binary, formBody, jsonBody, jsonResponse, messageOnly, statusAndMessage } from "../schemas/common.js";
+import { badRequest, binary, formBody, jsonBody, jsonResponse, messageOnly } from "../schemas/common.js";
 import * as s from "../schemas/user.js";
 import { z } from "zod";
 
@@ -20,8 +20,8 @@ export const userRoutes = [
     responses: {
       201: jsonResponse("User created", s.signUpResult),
       400: badRequest,
-      409: jsonResponse("Username already in use", statusAndMessage),
-      500: jsonResponse("Could not create the user", statusAndMessage),
+      409: jsonResponse("Username already in use", messageOnly),
+      500: jsonResponse("Could not create the user", messageOnly),
     },
     middleware: [validateUserSignUp],
     handler: userController.createUser,
@@ -64,8 +64,8 @@ export const userRoutes = [
     responses: {
       200: jsonResponse("The updated user", s.userWithContacts),
       400: badRequest,
-      409: jsonResponse("Username already in use", statusAndMessage),
-      500: jsonResponse("Could not update the user", statusAndMessage),
+      409: jsonResponse("Username already in use", messageOnly),
+      500: jsonResponse("Could not update the user", messageOnly),
     },
     middleware: [uploadUserPhoto.single("photo"), validateUser],
     handler: userController.updateUser,

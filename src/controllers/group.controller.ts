@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import type { Server } from "socket.io";
-import { PrismaClient } from '@prisma/client';
+import type { Group, User } from '@prisma/client';
 import { env } from "../config/env.js";
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma.js";
 
 function formatDateTime (isoString: string | Date) {
     const date = new Date(isoString);
@@ -24,48 +24,43 @@ function formatDateTime (isoString: string | Date) {
 }
 
 async function getGroup(req: Request, res: Response) {
-    const {groupId} = req.params;
+    const {groupId} = req.params as Record<string, string>;
     const groupID = parseInt(groupId)
 
     if (isNaN(groupID)) {
         return res.status(400).json({ message: 'Invalid group ID.' });
     }
 
-    try {
-        const group = await prisma.group.findUnique({
-            where: {
-                id: groupID
-            },
-            include: {
-                members: true,
-                admins: true,
-            }
-        })
+    const group = await prisma.group.findUnique({
+        where: {
+            id: groupID
+        },
+        include: {
+            members: true,
+            admins: true,
+        }
+    })
 
 
-        if (!group) return res.status(404).json({message: 'Group not found.'})
+    if (!group) return res.status(404).json({message: 'Group not found.'})
 
-         // Format createdAt to desired format
-         const formattedDateTime = formatDateTime(group.createdAt);
+     // Format createdAt to desired format
+     const formattedDateTime = formatDateTime(group.createdAt);
 
-         // Create a new user object with formatted date and time
-         const newGroup = {
-             ...group,
-             createdAtDate: formattedDateTime.date,
-             createdAtTime: formattedDateTime.time
-         };
+     // Create a new user object with formatted date and time
+     const newGroup = {
+         ...group,
+         createdAtDate: formattedDateTime.date,
+         createdAtTime: formattedDateTime.time
+     };
 
-         if (newGroup.name === null) {
-            const groupUsernames: string[] = []
-            group.members.map((member: any) => groupUsernames.push(member.username));
-            newGroup.name = groupUsernames.slice(0, groupUsernames.length - 1).join(', ') + ' & ' + groupUsernames.slice(groupUsernames.length - 1);
-         }
+     if (newGroup.name === null) {
+        const groupUsernames: string[] = []
+        group.members.forEach(member => groupUsernames.push(member.username));
+        newGroup.name = groupUsernames.slice(0, groupUsernames.length - 1).join(', ') + ' & ' + groupUsernames.slice(groupUsernames.length - 1);
+     }
 
-         return res.json(newGroup); 
-    } catch (err) {
-        console.log(err)
-        return res.status(500).json({message: 'An unknown error occured when trying to getGroup data.'})
-    }
+     return res.json(newGroup); 
 }
 
 async function createDirectMessage(req: Request, res: Response) {
@@ -79,62 +74,52 @@ async function createDirectMessage(req: Request, res: Response) {
 
     const directMsg = true;
 
-    try {
-        
-        const existingGroup = await prisma.group.findFirst({
-            where: {
-                directMsg,
-                members: {
-                    every: { id: { in: members.map((member: { id: number }) => member.id) } }
-                },
+    
+    const existingGroup = await prisma.group.findFirst({
+        where: {
+            directMsg,
+            members: {
+                every: { id: { in: members.map((member: { id: number }) => member.id) } }
             },
-            include: {
-                members: true,
-                messages: true,
-            },
-        });
+        },
+        include: {
+            members: true,
+            messages: true,
+        },
+    });
 
-        if (existingGroup) {
-            personalisedGroupName(existingGroup, user.id);
-            return res.json({existingGroup, message: 'Direct message group already exists.' });
-        }
-
-        // Create new group
-        const createdGroup = await prisma.group.create({
-            data: {
-                directMsg,
-                members: {
-                    connect: members.map((member: { id: number }) => ({ id: member.id })),
-                },
-            },
-        });
-
-        // Fetch the group with its related data (members and messages)
-        const newGroup = await prisma.group.findUnique({
-            where: { id: createdGroup.id },
-            include: {
-                members: true,
-                messages: true,
-            },
-        });
-
-        // Handle potential error in creation
-        if (!newGroup) {
-            return res.status(500).json({ message: 'An error occurred when trying to create the group.' });
-        }
-
-        // Respond with the created group
-        personalisedGroupName(newGroup, user.id);
-        res.status(201).json({ newGroup });
-
-    } catch (err) {
-        // Log and respond with detailed error
-        console.error('Error creating group:', err);
-        res.status(500).json({ 
-            status: 'error',
-            message: (err as Error).message || 'An unknown error occurred.'
-        });
+    if (existingGroup) {
+        personalisedGroupName(existingGroup, user.id);
+        return res.json({existingGroup, message: 'Direct message group already exists.' });
     }
+
+    // Create new group
+    const createdGroup = await prisma.group.create({
+        data: {
+            directMsg,
+            members: {
+                connect: members.map((member: { id: number }) => ({ id: member.id })),
+            },
+        },
+    });
+
+    // Fetch the group with its related data (members and messages)
+    const newGroup = await prisma.group.findUnique({
+        where: { id: createdGroup.id },
+        include: {
+            members: true,
+            messages: true,
+        },
+    });
+
+    // Handle potential error in creation
+    if (!newGroup) {
+        return res.status(500).json({ message: 'An error occurred when trying to create the group.' });
+    }
+
+    // Respond with the created group
+    personalisedGroupName(newGroup, user.id);
+    res.status(201).json({ newGroup });
 }
 
 async function createGroup(req: Request, res: Response) {
@@ -149,80 +134,72 @@ async function createGroup(req: Request, res: Response) {
     
     const directMsg = false;
 
-    try {
-        const existingGroup = await prisma.group.findFirst({
-            where: {
-                directMsg,
-                name: groupName,
-                members: {
-                    every: { id: { in: parsedMembers.map((member: { id: number }) => member.id) } }
-                },
+    const existingGroup = await prisma.group.findFirst({
+        where: {
+            directMsg,
+            name: groupName,
+            members: {
+                every: { id: { in: parsedMembers.map((member: { id: number }) => member.id) } }
             },
-            include: {
-                members: true,
-                messages: true,
-            },
-        });
+        },
+        include: {
+            members: true,
+            messages: true,
+        },
+    });
 
-        if (existingGroup) {
-            return res.json({existingGroup, message: 'Direct message group already exists.' });
-        }
-
-        // Your group creation logic here
-        const createdGroup = await prisma.group.create({
-            data: {
-                name: groupName,
-                members: {
-                    connect: JSON.parse(members).map((member: { id: number }) => ({ id: member.id })),
-                },
-                photo: groupPhotoUrl, // Save the Cloudinary URL for the group photo
-                directMsg: false,
-                admins: {
-                    connect: {id: groupCreator.id}
-                }
-            },
-        });
-
-        const newGroup = await prisma.group.findFirst({
-            where: { id: createdGroup.id },
-            include: {
-                members: true,
-                messages: true,
-            },
-        })
-
-        res.status(201).json({ newGroup });
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({ 
-            status: 'error',
-            message: 'Error creating group'
-        });
+    if (existingGroup) {
+        return res.json({existingGroup, message: 'Direct message group already exists.' });
     }
+
+    // Your group creation logic here
+    const createdGroup = await prisma.group.create({
+        data: {
+            name: groupName,
+            members: {
+                connect: JSON.parse(members).map((member: { id: number }) => ({ id: member.id })),
+            },
+            photo: groupPhotoUrl, // Save the Cloudinary URL for the group photo
+            directMsg: false,
+            admins: {
+                connect: {id: groupCreator.id}
+            }
+        },
+    });
+
+    const newGroup = await prisma.group.findFirst({
+        where: { id: createdGroup.id },
+        include: {
+            members: true,
+            messages: true,
+        },
+    })
+
+    res.status(201).json({ newGroup });
 }
 
 function nameGroup(members: { username: string }[]) {
     const groupUsernames: string[] = []
-    members.map((member: any) => groupUsernames.push(member.username));
+    members.forEach(member => groupUsernames.push(member.username));
     return groupUsernames.slice(0, groupUsernames.length - 1).join(', ') + ' & ' + groupUsernames.slice(groupUsernames.length - 1);
 }
 
-function personalisedGroupName(group: any, userID: number) {
+function personalisedGroupName(group: Group & { members: User[] }, userID: number) {
     if (group.members.length  <= 2) {
-        const recipient = group.members.find((member: { id: number }) => member.id !== userID);
+        const recipient = group.members.find(member => member.id !== userID)!;
         group.name = recipient.username;
         group.photo = recipient.photo;
     } else {
-        const otherMembers = group.members.filter((member: { id: number }) => member.id !== userID);
+        const otherMembers = group.members.filter(member => member.id !== userID);
         const otherMembersUsernames: string[] = []
-        otherMembers.forEach((member: { username: string }) => otherMembersUsernames.push(member.username))
+        otherMembers.forEach(member => otherMembersUsernames.push(member.username))
         group.name = otherMembersUsernames.slice(0, otherMembersUsernames.length - 1).join(', ') + ' & ' + otherMembersUsernames.slice(otherMembersUsernames.length - 1);
     }
     if (group.photo === null) group.photo = env.DEFAULT_PICTURE;
 }
 
 async function updateGroup(req: Request, res: Response) {
-    const {groupId} = req.params;
+    const {groupId} = req.params as Record<string, string>;
     const {name, bio} = req.body;
     const photo = req.file ? req.file.path : undefined;
 
@@ -231,87 +208,72 @@ async function updateGroup(req: Request, res: Response) {
     if (bio !== undefined) updateData.bio = bio;
     if (photo !== undefined) updateData.photo = photo;
 
-    try {
-        const updatedGroup = await prisma.group.update({
-            where: {
-                id: parseInt(groupId),
-            },
-            data: updateData,
-            include: {
-                members: true,
-                admins: true,
-            }
-        })
+    const updatedGroup = await prisma.group.update({
+        where: {
+            id: parseInt(groupId),
+        },
+        data: updateData,
+        include: {
+            members: true,
+            admins: true,
+        }
+    })
 
-        // Format createdAt to desired format
-        const formattedDateTime = formatDateTime(updatedGroup.createdAt);
+    // Format createdAt to desired format
+    const formattedDateTime = formatDateTime(updatedGroup.createdAt);
 
-        // Create a new user object with formatted date and time
-        const updatedGroupFormatted = {
-            ...updatedGroup,
-            createdAtDate: formattedDateTime.date,
-            createdAtTime: formattedDateTime.time
-        };
+    // Create a new user object with formatted date and time
+    const updatedGroupFormatted = {
+        ...updatedGroup,
+        createdAtDate: formattedDateTime.date,
+        createdAtTime: formattedDateTime.time
+    };
 
-        console.log(updatedGroupFormatted)
+    console.log(updatedGroupFormatted)
 
-        res.status(200).json(updatedGroupFormatted);
-    } catch (error) {
-        console.log(error)
-        res.status(500).json({ 
-            status: 'error',
-            message: 'Error creating group'
-        });
-    }
+    res.status(200).json(updatedGroupFormatted);
 }
 
 async function deleteGroup(req: Request, res: Response) {
-    const {groupId} = req.params;
+    const {groupId} = req.params as Record<string, string>;
     const groupID = parseInt(groupId)
     const userId = parseInt(req.headers["user-id"] as string);
 
-    try {
-        const group = await prisma.group.findUnique({
-            where: {
-                id: groupID
-            },
-            include: {
-                admins: true
-            }
-        })
-
-        if (!group) {
-            return res.status(404).json({ message: 'Group not found.' });
+    const group = await prisma.group.findUnique({
+        where: {
+            id: groupID
+        },
+        include: {
+            admins: true
         }
+    })
 
-        console.log(group.admins, userId)
+    if (!group) {
+        return res.status(404).json({ message: 'Group not found.' });
+    }
 
-        const userIsAdmin = group.admins.some(admin => admin.id === userId)
+    console.log(group.admins, userId)
 
-        if (userIsAdmin) {
-            // Perform the delete
-            await prisma.$transaction(async (prisma) => {
-                // Step 1: Delete related messages
-                await prisma.message.deleteMany({
-                where: { groupId: groupID },
-                });
-        
-                // Step 2: Delete the group itself
-                await prisma.group.delete({
-                where: { id: groupID },
-                });
+    const userIsAdmin = group.admins.some(admin => admin.id === userId)
+
+    if (userIsAdmin) {
+        // Perform the delete
+        await prisma.$transaction(async (prisma) => {
+            // Step 1: Delete related messages
+            await prisma.message.deleteMany({
+            where: { groupId: groupID },
             });
-              
-            return res.status(200).json({ message: 'Group successfully deleted.' });
+    
+            // Step 2: Delete the group itself
+            await prisma.group.delete({
+            where: { id: groupID },
+            });
+        });
+          
+        return res.status(200).json({ message: 'Group successfully deleted.' });
 
-        } else {
-            return res.status(403).json({ message: 'User does not have admin privileges to delete this group.' });
-        }
-
-
-    } catch (err) {
-        console.error(err); // Log the error
-        return res.status(500).json({message: 'An unknown error occurred when trying to delete the group.'})
+    } else {
+        return res.status(403).json({ message: 'User does not have admin privileges to delete this group.' });
     }
 }
 

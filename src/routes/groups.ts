@@ -2,7 +2,7 @@ import * as groupController from "../controllers/group.controller.js";
 import { uploadGroupPhoto } from "../middleware/multer.js";
 import { validateGroup } from "../middleware/validation.js";
 import { defineRoute } from "../configuration/defineRoute.js";
-import { badRequest, formBody, jsonBody, jsonResponse, messageOnly, statusAndMessage } from "../schemas/common.js";
+import { badRequest, formBody, jsonBody, jsonResponse, messageOnly } from "../schemas/common.js";
 import * as s from "../schemas/group.js";
 import { z } from "zod";
 
@@ -33,7 +33,7 @@ export const groupRoutes = [
     responses: {
       200: jsonResponse("The updated group", s.groupProfile),
       400: badRequest,
-      500: jsonResponse("Could not update the group", statusAndMessage),
+      500: jsonResponse("Could not update the group", messageOnly),
     },
     middleware: [uploadGroupPhoto.single("photo"), validateGroup],
     handler: groupController.updateGroup,
@@ -65,7 +65,7 @@ export const groupRoutes = [
       200: jsonResponse("The chat already existed", s.existingGroupResult),
       201: jsonResponse("Chat created", s.newGroupResult),
       400: jsonResponse("No members given", z.object({ message: z.string() })),
-      500: jsonResponse("Could not create the chat", statusAndMessage),
+      500: jsonResponse("Could not create the chat", messageOnly),
     },
     handler: groupController.createDirectMessage,
   }),
@@ -81,7 +81,7 @@ export const groupRoutes = [
       200: jsonResponse("A group with that name and members already exists", s.existingGroupResult),
       201: jsonResponse("Group created", s.newGroupResult),
       400: badRequest,
-      500: jsonResponse("Could not create the group", statusAndMessage),
+      500: jsonResponse("Could not create the group", messageOnly),
     },
     middleware: [uploadGroupPhoto.single("groupPhoto"), validateGroup],
     handler: groupController.createGroup,

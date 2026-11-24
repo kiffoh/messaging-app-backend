@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import type { Server } from "socket.io";
-import { PrismaClient, type User } from "@prisma/client";
+import { Prisma, type User } from "@prisma/client";
 import { env } from "../config/env.js";
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma.js";
 import bcrypt from 'bcrypt';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
@@ -25,6 +25,9 @@ function formatDateTime (isoString: string | Date) {
         time: formattedTime
     };
 }
+
+const isUniqueViolation = (error: unknown) =>
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
 
 async function createUser(req: Request, res: Response) {
     try {
@@ -57,35 +60,19 @@ async function createUser(req: Request, res: Response) {
         );
 
         return res.status(201).json({ user, token }); // Return both user and token
-    } catch (error: any) {
-        // Handle specific error cases
-        if (error.code === 'P2002') {
+    } catch (error) {
+        if (isUniqueViolation(error)) {
             return res.status(409).json({ 
-                status: 'error',
                 message: 'Username already in use. Please try again with a different username' 
             });
         }
-        
-        // Handle bcrypt errors
-        if (error.name === 'HashError') {
-            return res.status(500).json({ 
-                status: 'error',
-                message: 'Error processing password' 
-            });
-        }
-
-        // General error case
-        return res.status(500).json({ 
-            status: 'error',
-            message: 'An error occurred when trying to create the user' 
-        });
+        throw error;
     }
 }
 
 function logIn(req: Request, res: Response, next: NextFunction) {
     passport.authenticate('local', {session: false}, (err: unknown, user: User | false, info: unknown) => {
         if (err) {
-            console.error('Authentication error:', err);  // Log authentication errors
             return next(err);
         }
 
@@ -109,68 +96,60 @@ function logIn(req: Request, res: Response, next: NextFunction) {
 }
 
 async function getUser(req: Request, res: Response) {
-    const {userId} = req.params;
+    const {userId} = req.params as Record<string, string>;
     const userID = parseInt(userId)
 
     if (isNaN(userID)) {
         return res.status(400).json({ message: 'Invalid user ID.' });
     }
 
-    try {
-        const user = await prisma.user.findUnique({
-            where: {
-                id: userID
-            },
-            include: {
-                contacts: true
-            }
-        })
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userID
+        },
+        include: {
+            contacts: true
+        }
+    })
 
-        if (!user) return res.status(404).json({message: 'User not found.'})
+    if (!user) return res.status(404).json({message: 'User not found.'})
 
-         // Format createdAt to desired format
-         const formattedDateTime = formatDateTime(user.createdAt);
+    // Format createdAt to desired format
+    const formattedDateTime = formatDateTime(user.createdAt);
 
-         // Create a new user object with formatted date and time
-         const newUser = {
-             ...user,
-             createdAtDate: formattedDateTime.date,
-             createdAtTime: formattedDateTime.time
-         };
-         return res.json(newUser); 
-    } catch (err) {
-        return res.status(500).json({message: 'An unknown error occurred when trying to getUser data.'})
-    }
+    // Create a new user object with formatted date and time
+    const newUser = {
+        ...user,
+        createdAtDate: formattedDateTime.date,
+        createdAtTime: formattedDateTime.time
+    };
+    return res.json(newUser); 
 }
 
 async function getAllUsernames(req: Request, res: Response) {
-    try {
-        const users = await prisma.user.findMany({
-            select: {
-                username: true,
-                id: true,
-                photo: true
-            }
-        });
+    const users = await prisma.user.findMany({
+        select: {
+            username: true,
+            id: true,
+            photo: true
+        }
+    });
 
-        if (users.length === 0) return res.status(404).json({message: 'No users found.'})
+    if (users.length === 0) return res.status(404).json({message: 'No users found.'})
 
-        // Only need in development
-        const updatedUsers = users.map(user => {
-            return {
-                ...user,
-                photo: user.photo || env.DEFAULT_PICTURE
-            }
-        })
+    // Only need in development
+    const updatedUsers = users.map(user => {
+        return {
+            ...user,
+            photo: user.photo || env.DEFAULT_PICTURE
+        }
+    })
 
-        return res.json(updatedUsers)
-    } catch (err) {
-        return res.status(500).json({message: 'An unknown error occurred when trying to getAllUsernames.'})
-    }
+    return res.json(updatedUsers)
 }
 
 async function updateUser(req: Request, res: Response) {
-    const {userId} = req.params;
+    const {userId} = req.params as Record<string, string>;
     const {username, bio} = req.body;
     const photo = req.file ? req.file.path : undefined;
 
@@ -201,86 +180,66 @@ async function updateUser(req: Request, res: Response) {
 
         res.status(200).json(updatedUserFormatted);
 
-    } catch (error: any) {
-        console.error("Error updating user profile:", error);
-
-        // Handle specific error cases
-        if (error.code === 'P2002') {
+    } catch (error) {
+        if (isUniqueViolation(error)) {
             return res.status(409).json({ 
-                status: 'error',
                 message: 'Username already in use. Please try again with a different username' 
             });
         }
-
-        // General error case
-        return res.status(500).json({ 
-            status: 'error',
-            message: 'An error occurred when trying to create the user' 
-        });
+        throw error;
     }
 }
 
 async function updateUserContacts(req: Request, res: Response) {
-    const {userId} = req.params;
+    const {userId} = req.params as Record<string, string>;
     const {selectedContacts} = req.body;
 
-    try {
-        const updatedUser =  await prisma.user.update({
-            where: {
-                id: parseInt(userId),
-            },
-            data: {
-                contacts: {
-                    connect: selectedContacts.map((contactId: number) => ({id: contactId}))
-                }
-            },
-            include: {
-                contacts: true,
-                contactedBy: true
+    const updatedUser =  await prisma.user.update({
+        where: {
+            id: parseInt(userId),
+        },
+        data: {
+            contacts: {
+                connect: selectedContacts.map((contactId: number) => ({id: contactId}))
             }
-        })
+        },
+        include: {
+            contacts: true,
+            contactedBy: true
+        }
+    })
 
-        // Format createdAt to desired format
-        const formattedDateTime = formatDateTime(updatedUser.createdAt);
+    // Format createdAt to desired format
+    const formattedDateTime = formatDateTime(updatedUser.createdAt);
 
-        // Create a new user object with formatted date and time
-        const updatedUserFormatted = {
-            ...updatedUser,
-            createdAtDate: formattedDateTime.date,
-            createdAtTime: formattedDateTime.time
-        };
+    // Create a new user object with formatted date and time
+    const updatedUserFormatted = {
+        ...updatedUser,
+        createdAtDate: formattedDateTime.date,
+        createdAtTime: formattedDateTime.time
+    };
 
-        res.status(200).json(updatedUserFormatted);
-
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json({message: "An unknown error occurred when trying to update the user's contacts."})
-    }
+    res.status(200).json(updatedUserFormatted);
 }
 
 async function deleteUser(req: Request, res: Response) {
-    const {userId} = req.params;
+    const {userId} = req.params as Record<string, string>;
     const userID = parseInt(userId);
 
-    try {
-        const user = await prisma.user.findUnique({ where: { id: userID } });
-        if (!user) return res.status(404).json({ message: 'User not found.' });
+    const user = await prisma.user.findUnique({ where: { id: userID } });
+    if (!user) return res.status(404).json({ message: 'User not found.' });
 
-        // Perform the delete
-        await prisma.$transaction(async (prisma) => {   
-             // Delete the user
-            await prisma.user.delete({
-                where: {
-                    id: userID
-                }
-            })
+    // Perform the delete
+    await prisma.$transaction(async (prisma) => {   
+         // Delete the user
+        await prisma.user.delete({
+            where: {
+                id: userID
+            }
         })
+    })
 
-        return res.status(200).json({ message: 'User successfully deleted.' });
-    } catch (err) {
-        console.error(err); // Log the error for debugging
-        return res.status(500).json({message: 'An unknown error occurred when trying to delete the user.'})
-    }
+    return res.status(200).json({ message: 'User successfully deleted.' });
 }
 
 export {

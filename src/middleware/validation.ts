@@ -17,17 +17,7 @@ export const groupSchema = z.object({ name: groupName.optional(), bio: bio.optio
 // Validates req.body and keeps the 400 response shape the client already expects.
 // Parsed values (e.g. trimmed strings) are merged over the body, so fields the schema doesn't list survive.
 export const validate = (schema: z.ZodType) => (req: Request, res: Response, next: NextFunction) => {
-  const result = schema.safeParse(req.body ?? {});
-  if (!result.success) {
-    return res.status(400).json({
-      status: "error",
-      errors: result.error.issues.map((issue) => ({
-        field: issue.path.join("."),
-        message: issue.message,
-      })),
-    });
-  }
-  req.body = { ...req.body, ...(result.data as object) };
+  req.body = { ...req.body, ...(schema.parse(req.body) as object) };
   next();
 };
 

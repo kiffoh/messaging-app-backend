@@ -1,12 +1,11 @@
 import { env } from "./config/env.js";
 import createError from 'http-errors';
 import express, { type Request, type Response, type NextFunction } from "express";
-import path from 'path';
-import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import cors from 'cors';
 import passport from 'passport';
 import "./middleware/passport.js";
+import { handleError } from './middleware/error.js';
 
 // Import socket.io and http
 import { Server } from 'socket.io';
@@ -43,17 +42,10 @@ io.on('connection', (socket) => {
   });
 });
 
-// view engine setup
-app.set('views', path.join(process.cwd(), 'views'));
-app.set('view engine', 'jade');
-
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(express.static(path.join(process.cwd(), 'public')));
 app.use(cors({origin: env.FRONTEND_URL}));
-app.options('*', cors());
 
 app.use(passport.initialize());
 
@@ -68,14 +60,7 @@ app.use(function(req: Request, res: Response, next: NextFunction) {
   next(createError(404));
 });
 
-// error handler
-app.use(function(err: any, req: Request, res: Response, next: NextFunction) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-  res.status(err.status || 500);
-  res.render('error');
-});
-
+app.use(handleError);
 
 // Export app and io for use in routes/controllers
 export { app, server, io };

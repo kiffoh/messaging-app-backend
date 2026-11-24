@@ -1,7 +1,7 @@
 import * as messageController from "../controllers/messages.controller.js";
 import { uploadMessagePhoto } from "../middleware/multer.js";
 import { defineRoute } from "../configuration/defineRoute.js";
-import { errorOnly, formBody, jsonBody, jsonResponse, messageOnly, textResponse } from "../schemas/common.js";
+import { messageOnly, formBody, jsonBody, jsonResponse } from "../schemas/common.js";
 import { userIdParams } from "../schemas/user.js";
 import { groupWithMembersAndMessages } from "../schemas/group.js";
 import * as s from "../schemas/message.js";
@@ -19,7 +19,7 @@ export const messageRoutes = [
     request: { params: userIdParams },
     responses: {
       200: jsonResponse("The user's chats", z.array(groupWithMembersAndMessages)),
-      500: textResponse("Internal Server Error"),
+      500: jsonResponse("Internal Server Error", messageOnly),
     },
     handler: messageController.getMessages,
   }),
@@ -33,7 +33,7 @@ export const messageRoutes = [
     request: { params: s.chatParams, body: formBody(s.createMessageBody) },
     responses: {
       201: jsonResponse("The new message", s.message),
-      500: textResponse("Internal Server Error"),
+      500: jsonResponse("Internal Server Error", messageOnly),
     },
     middleware: [uploadMessagePhoto.single("photoUrl")],
     handler: messageController.createMessage,
@@ -48,7 +48,7 @@ export const messageRoutes = [
     request: { params: s.messageParams, body: jsonBody(s.updateMessageBody) },
     responses: {
       200: jsonResponse("The updated message", s.message),
-      500: jsonResponse("Could not update the message", errorOnly),
+      500: jsonResponse("Could not update the message", messageOnly),
     },
     handler: messageController.updateMessage,
   }),
