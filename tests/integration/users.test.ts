@@ -80,3 +80,13 @@ it("PUT /users/:id/contacts for another user returns 403", async () => {
   const res = await request(app).put(`/users/${bob.id}/contacts`).set(auth(token)).send({ contactIds: [] });
   expect(res.status).toBe(403);
 });
+
+it("PUT /users/:id with a photo for another user returns 403 before any upload", async () => {
+  const { token } = await makeUser("alice");
+  const { user: bob } = await makeUser("bob");
+  const res = await request(app)
+    .put(`/users/${bob.id}`)
+    .set(auth(token))
+    .attach("photo", Buffer.from("x"), "x.png");
+  expect(res.status).toBe(403);
+});

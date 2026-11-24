@@ -1,10 +1,17 @@
+import type { RequestHandler } from "express";
 import { z } from "zod";
 import { defineRoute } from "../../openapi/defineRoute.js";
 import { badRequest, formBody, jsonBody, jsonResponse, messageOnly } from "../../lib/schemas.js";
 import { uploadUserPhoto } from "../../middleware/upload.js";
 import { validate } from "../../middleware/validate.js";
+import { assertSelf } from "./users.service.js";
 import * as controller from "./users.controller.js";
 import * as s from "./users.schemas.js";
+
+const selfOnly: RequestHandler = (req, res, next) => {
+  assertSelf(req.userId, res.locals.params.userId);
+  next();
+};
 
 const tags = ["Users"];
 const notSelf = jsonResponse("Not your account", messageOnly);
@@ -42,7 +49,8 @@ export const userRoutes = [
       403: notSelf,
       409: jsonResponse("Username already in use", messageOnly),
     },
-    middleware: [uploadUserPhoto.single("photo"), validate(s.updateUserBody)],
+    // Before multer: otherwise a non-owner's photo is stored in Cloudinary before the 403.
+    middleware: [selfOnly, uploadUserPhoto.single("photo"), validate(s.updateUserBody)],
     handler: controller.update,
   }),
 
