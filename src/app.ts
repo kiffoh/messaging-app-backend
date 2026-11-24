@@ -15,7 +15,7 @@ import { openApiDocument } from './openapi/document.js';
 import { mountRoutes } from './openapi/defineRoute.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { userRoutes } from './modules/users/users.routes.js';
-import { messageRoutes } from './routes/messages.js';
+import { messageRoutes } from './modules/messages/messages.routes.js';
 import { groupRoutes } from './modules/groups/groups.routes.js';
 
 const app = express();

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { id, idParam, idList, dateTime, binary } from "../../lib/schemas.js";
 import { user } from "../users/users.schemas.js";
-import { message } from "../../schemas/message.js";
+import { message } from "../messages/messages.schemas.js";
 
 export const groupIdParams = z.object({ groupId: idParam });
 

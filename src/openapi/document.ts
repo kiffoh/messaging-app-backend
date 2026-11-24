@@ -3,7 +3,7 @@ import { registerRoutes } from "./defineRoute.js";
 import { authRoutes } from "../modules/auth/auth.routes.js";
 import { userRoutes } from "../modules/users/users.routes.js";
 import { groupRoutes } from "../modules/groups/groups.routes.js";
-import { messageRoutes } from "../routes/messages.js";
+import { messageRoutes } from "../modules/messages/messages.routes.js";
 
 const registry = new OpenAPIRegistry();
 registry.registerComponent("securitySchemes", "bearerAuth", { type: "http", scheme: "bearer", bearerFormat: "JWT" });
