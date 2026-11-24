@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from "express";
-import type { Server } from "socket.io";
 import { Prisma, type User } from "@prisma/client";
 import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";

@@ -56,7 +56,6 @@ async function createMessage(req: Request, res: Response, next: NextFunction, io
     const authorID = parseInt(authorId)
 
     const photoUrl = req.file ? req.file.path : null;
-    console.log(req.file, photoUrl)
 
     const newMessage = await prisma.message.create({
         data: {
@@ -75,7 +74,7 @@ async function createMessage(req: Request, res: Response, next: NextFunction, io
 
 async function updateMessage(req: Request, res: Response, next: NextFunction, io: Server) {
     const {content} = req.body;
-    const {chatId, messageId} = req.params as Record<string, string>;
+    const {messageId} = req.params as Record<string, string>;
     const messageID = parseInt(messageId);
 
     const updatedMessage = await prisma.message.update({
@@ -95,7 +94,7 @@ async function updateMessage(req: Request, res: Response, next: NextFunction, io
 
 
 async function deleteMessage(req: Request, res: Response, next: NextFunction, io: Server) {
-    const {chatId, messageId} = req.params as Record<string, string>;
+    const {messageId} = req.params as Record<string, string>;
     const messageID = parseInt(messageId);
 
     const message = await prisma.message.findUnique({ where: { id: messageID } });

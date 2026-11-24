@@ -1,5 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
-import type { Server } from "socket.io";
+import type { Request, Response } from "express";
 import type { Group, User } from '@prisma/client';
 import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
@@ -229,7 +228,6 @@ async function updateGroup(req: Request, res: Response) {
         createdAtTime: formattedDateTime.time
     };
 
-    console.log(updatedGroupFormatted)
 
     res.status(200).json(updatedGroupFormatted);
 }
@@ -252,7 +250,6 @@ async function deleteGroup(req: Request, res: Response) {
         return res.status(404).json({ message: 'Group not found.' });
     }
 
-    console.log(group.admins, userId)
 
     const userIsAdmin = group.admins.some(admin => admin.id === userId)
 

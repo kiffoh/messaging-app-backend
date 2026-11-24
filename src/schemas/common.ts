@@ -1,4 +1,4 @@
-import { codec, z } from "zod";
+import { z } from "zod";
 import "../middleware/validation.js"; // extends zod with .openapi()
 
 export const id = z.number().int();
