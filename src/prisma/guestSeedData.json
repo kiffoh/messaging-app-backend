@@ -1,0 +1,333 @@
+{
+  "contacts": [
+    "test1",
+    "johndoe",
+    "janedoe",
+    "harvey"
+  ],
+  "users": [
+    {
+      "username": "guest",
+      "bio": "Hello, welcome to EasyMessage! You are using the guest user account.",
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1725813381/o3aadn8b9aww4wuzethd.svg",
+      "createdAt": "2024-10-20T13:34:08.075Z"
+    },
+    {
+      "username": "test1",
+      "bio": "Hello, I am on EasyMessage!",
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1725813381/o3aadn8b9aww4wuzethd.svg",
+      "createdAt": "2024-10-20T13:36:03.283Z"
+    },
+    {
+      "username": "johndoe",
+      "bio": "I am johndoe, a customised user.",
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1729432244/profile_photos/johndoe%20profile.jpg",
+      "createdAt": "2024-10-20T13:40:35.875Z"
+    },
+    {
+      "username": "janedoe",
+      "bio": "Come celebrate Diwali with me!!!",
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1729432472/profile_photos/janedoe%20profile.jpg",
+      "createdAt": "2024-10-20T13:53:38.584Z"
+    },
+    {
+      "username": "harvey",
+      "bio": "Hello, I'm Harvey! Rugby enthusiast!!!",
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1729432627/profile_photos/harvey%20profile.jpg",
+      "createdAt": "2024-10-20T13:57:36.286Z"
+    }
+  ],
+  "groups": [
+    {
+      "name": "Study group",
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1729432811/group_photos/study%20group%20image.jpg",
+      "bio": "Group to study for university",
+      "directMsg": false,
+      "createdAt": "2024-10-20T14:00:12.116Z",
+      "updatedAt": "2024-10-20T14:20:20.189Z",
+      "members": [
+        "guest",
+        "test1",
+        "janedoe"
+      ],
+      "admins": [
+        "guest"
+      ],
+      "messages": [
+        {
+          "author": "guest",
+          "content": "Hey guys! Shall we meet to study today?\n",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:00:46.519Z",
+          "updatedAt": "2024-10-20T14:01:32.199Z"
+        },
+        {
+          "author": "janedoe",
+          "content": "UUUghh...",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:02:16.063Z",
+          "updatedAt": "2024-10-20T14:03:36.294Z"
+        },
+        {
+          "author": "janedoe",
+          "content": "I cannot face another day in that dark library",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:03:42.684Z",
+          "updatedAt": "2024-10-20T14:03:42.684Z"
+        },
+        {
+          "author": "test1",
+          "content": "Even though it's dingy, it's gunna have to do",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:06:37.094Z",
+          "updatedAt": "2024-10-20T14:06:37.094Z"
+        },
+        {
+          "author": "test1",
+          "content": "I need to cram more info into my cranium",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:06:48.408Z",
+          "updatedAt": "2024-10-20T14:06:48.408Z"
+        },
+        {
+          "author": "guest",
+          "content": "I agree test1, I am not ready for the test yet",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:08:39.887Z",
+          "updatedAt": "2024-10-20T14:08:39.887Z"
+        },
+        {
+          "author": "janedoe",
+          "content": "Fine, fine, fine!!! I will join too",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:09:19.822Z",
+          "updatedAt": "2024-10-20T14:09:19.822Z"
+        },
+        {
+          "author": "guest",
+          "content": "Great, what time is good for everyone?",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:09:54.796Z",
+          "updatedAt": "2024-10-20T14:09:54.796Z"
+        },
+        {
+          "author": "test1",
+          "content": "By the bike sheds at 3pm?",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:12:21.028Z",
+          "updatedAt": "2024-10-20T14:12:21.028Z"
+        },
+        {
+          "author": "janedoe",
+          "content": "Yep, I'm happy with that",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:13:05.686Z",
+          "updatedAt": "2024-10-20T14:13:05.686Z"
+        },
+        {
+          "author": "guest",
+          "content": "Perfect, see you guys then!",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:13:42.803Z",
+          "updatedAt": "2024-10-20T14:13:42.803Z"
+        }
+      ]
+    },
+    {
+      "name": null,
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1729432472/profile_photos/janedoe%20profile.jpg",
+      "bio": "We are the greatest tribe on EasyMessage.",
+      "directMsg": true,
+      "createdAt": "2024-10-20T14:14:37.279Z",
+      "updatedAt": "2024-10-20T14:14:37.279Z",
+      "members": [
+        "guest",
+        "janedoe"
+      ],
+      "admins": [],
+      "messages": [
+        {
+          "author": "janedoe",
+          "content": "My bike tire is punctured :( I am not in the right state of mind to fix it now... ",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:15:22.986Z",
+          "updatedAt": "2024-10-20T14:16:39.138Z"
+        },
+        {
+          "author": "janedoe",
+          "content": "Please can you give me a lift to the library?",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:15:40.491Z",
+          "updatedAt": "2024-10-20T14:15:40.491Z"
+        },
+        {
+          "author": "guest",
+          "content": "Hahaha yes no worries, I'll be with you in 15?",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:16:23.988Z",
+          "updatedAt": "2024-10-20T14:16:23.988Z"
+        },
+        {
+          "author": "janedoe",
+          "content": "Perfect! Thank you so much x",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:16:49.502Z",
+          "updatedAt": "2024-10-20T14:16:49.502Z"
+        },
+        {
+          "author": "guest",
+          "content": "On my way now",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:21:14.906Z",
+          "updatedAt": "2024-10-20T14:21:14.906Z"
+        }
+      ]
+    },
+    {
+      "name": null,
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1725813381/o3aadn8b9aww4wuzethd.svg",
+      "bio": "We are the greatest tribe on EasyMessage.",
+      "directMsg": true,
+      "createdAt": "2024-10-20T14:17:14.049Z",
+      "updatedAt": "2024-10-20T14:17:14.049Z",
+      "members": [
+        "guest",
+        "test1"
+      ],
+      "admins": [],
+      "messages": [
+        {
+          "author": "guest",
+          "content": "Heads up, jane is not feeling the best at the moment. Probs best to be extra kind today",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:17:49.134Z",
+          "updatedAt": "2024-10-20T14:17:49.134Z"
+        },
+        {
+          "author": "test1",
+          "content": "Ahh, I thought that from her messages",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:18:17.525Z",
+          "updatedAt": "2024-10-20T14:18:17.525Z"
+        },
+        {
+          "author": "test1",
+          "content": "I'll be extra kind today. At least I've got a warning this time!",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:18:36.089Z",
+          "updatedAt": "2024-10-20T14:18:36.089Z"
+        }
+      ]
+    },
+    {
+      "name": null,
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1729432627/profile_photos/harvey%20profile.jpg",
+      "bio": "We are the greatest tribe on EasyMessage.",
+      "directMsg": true,
+      "createdAt": "2024-10-20T14:57:10.202Z",
+      "updatedAt": "2024-10-20T14:57:10.202Z",
+      "members": [
+        "guest",
+        "harvey"
+      ],
+      "admins": [],
+      "messages": [
+        {
+          "author": "harvey",
+          "content": "Wales are not looking good for this years six nations ",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T14:58:12.548Z",
+          "updatedAt": "2024-10-20T14:58:12.548Z"
+        }
+      ]
+    },
+    {
+      "name": "England vs Wales",
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1729434119/group_photos/knight%20with%20st%20george%20cross.jpg",
+      "bio": "2025 Six Nations is Englands year.",
+      "directMsg": false,
+      "createdAt": "2024-10-20T16:32:07.313Z",
+      "updatedAt": "2024-10-21T13:04:26.454Z",
+      "members": [
+        "guest",
+        "johndoe",
+        "harvey"
+      ],
+      "admins": [
+        "harvey"
+      ],
+      "messages": [
+        {
+          "author": "harvey",
+          "content": "C'mon England",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T16:32:33.797Z",
+          "updatedAt": "2024-10-20T16:32:33.797Z"
+        },
+        {
+          "author": "guest",
+          "content": "The dragon will burn the knight and with it St George's cross :) ",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T17:18:00.964Z",
+          "updatedAt": "2024-10-20T17:18:00.964Z"
+        },
+        {
+          "author": "johndoe",
+          "content": "No chance, everyone knows dragons aren't real mate",
+          "photoUrl": null,
+          "createdAt": "2024-10-20T17:19:57.020Z",
+          "updatedAt": "2024-10-20T17:21:49.446Z"
+        },
+        {
+          "author": "johndoe",
+          "content": "That's a visual depiction of how the match will go",
+          "photoUrl": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1729447132/message_photos/8bit%20image%20of%20a%20knight%20displaying%20st%20george%27s%20cross%20slaying%20a%20dragon.jpg",
+          "createdAt": "2024-10-20T17:58:52.977Z",
+          "updatedAt": "2024-10-20T17:58:52.977Z"
+        }
+      ]
+    },
+    {
+      "name": null,
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1727026420/group_people_grey_high_resolution-02_kiff_sinywj.jpg",
+      "bio": "We are the greatest tribe on EasyMessage.",
+      "directMsg": false,
+      "createdAt": "2024-10-21T13:02:13.906Z",
+      "updatedAt": "2024-10-21T13:02:13.906Z",
+      "members": [
+        "guest",
+        "johndoe",
+        "janedoe"
+      ],
+      "admins": [
+        "guest"
+      ],
+      "messages": []
+    },
+    {
+      "name": null,
+      "photo": "https://res.cloudinary.com/dmaq0peyx/image/upload/v1727026420/group_people_grey_high_resolution-02_kiff_sinywj.jpg",
+      "bio": "We are the greatest tribe on EasyMessage.",
+      "directMsg": false,
+      "createdAt": "2024-10-21T13:03:16.332Z",
+      "updatedAt": "2024-10-21T13:03:16.332Z",
+      "members": [
+        "guest",
+        "johndoe",
+        "janedoe"
+      ],
+      "admins": [
+        "johndoe"
+      ],
+      "messages": [
+        {
+          "author": "johndoe",
+          "content": "Guest, would you like to come round for dinner at our house this week?",
+          "photoUrl": null,
+          "createdAt": "2024-10-21T13:03:49.907Z",
+          "updatedAt": "2024-10-21T13:03:49.907Z"
+        }
+      ]
+    }
+  ]
+}

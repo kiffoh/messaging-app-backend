@@ -6,3 +6,6 @@ functiontesting.js
 
 public/images/blank-profile-picture-973460.svg
 public/images/pngwing.com.png
+!.env.example
+dist
+openapi.json
