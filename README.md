@@ -1,795 +1,106 @@
-# **EasyMessage - Messaging App (Backend)**
+# EasyMessage - Messaging App (Backend)
 
-# **Table of Contents**
-- [Introduction](#introduction)
-- [Features](#features)
-- [Demo](#demo)
-- [Technologies Used](#technologies-used)
-- [Installation](#installation)
-- [Environment Setup](#environment-setup)
-- [Running the Project](#running-the-project)
-- [API Documentation](#api-documentation)
-- [Database Schema](#database-schema)
-- [Authentication and Authorisation](#authentication-and-authorisation)
-- [Testing](#testing)
-- [Deployment](#deployment)
+## Introduction
+EasyMessage is a web app for direct and group messaging, inspired by WhatsApp. It is one of the final projects in the [Odin Project](https://www.theodinproject.com/lessons/nodejs-messaging-app).
 
-# Introduction
-**EasyMessage** is a web application for direct and group messaging, inspired by WhatsApp. This project is one of the final projects in the [Odin Project](https://www.theodinproject.com/lessons/nodejs-messaging-app), and building it deepened my understanding of authentication, media handling and real-time client-server communication.
+The backend is Express 5 and Prisma (PostgreSQL). It exposes a REST API for users, groups and messages, and emits Socket.IO events when a message is created, edited or deleted. Authentication uses JWTs, and passwords are hashed with bcrypt.
 
-The backend is built with Express and Prisma (PostgreSQL), and exposes a REST API for users, groups and messages. Controllers that create, update or delete a message also emit a Socket.IO event (`newMessage`, `messageUpdated`, `messageDeleted`) so connected clients update without polling. Authentication uses Passport's Local Strategy with JWTs, and passwords are hashed with bcrypt before being stored.
-
-# Features
-
-- 🔐 **Secure Authentication**: JWT-based user authentication
-- 💬 **Real-time Messaging**: Instant message delivery using Socket.IO
-- 👥 **Group Chats**: Support for multiple users in conversations
-- 📸 **Media Sharing**: Image upload and sharing capabilities
-- 👤 **User Profiles**: Customisable user profiles with avatars
-- 📩 **Direct Messages**: One-to-one private conversations
-
-# Demo
-[The website is live](https://messaging-app-client-eight.vercel.app/). Log in with the demo credentials to explore the features of the full-stack application:
+## Demo
+[The website is live](https://messaging-app-client-eight.vercel.app/). Log in with the demo credentials:
 - **username**: guest
 - **password**: iamaguest
 
-## Technologies Used
-- **Runtime**: Node.js (v16+)
-- **Framework**: Express.js
-- **Database**: PostgreSQL
-- **ORM**: Prisma
-- **Authentication**: Passport.js, JWT
-- **Real-time Communication**: Socket.IO
-- **File Upload**: Multer, Cloudinary
-- **Testing**: Jest
+## Tech
+Node.js 20.6+, Express 5, TypeScript, Prisma, PostgreSQL, Socket.IO, Zod, Multer with Cloudinary, Vitest and Supertest. Swagger UI is generated from the Zod schemas.
 
-# Installation
-### **Prerequisites**
-Ensure the following software is installed before proceeding:
-- **Node.js** (v16+ recommended)
-- **PostgreSQL** (or your preferred database)
-
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/kiffoh/messaging-app-server.git
-    cd messaging-app-server
-    ```
-
-2. Install dependencies:
-    ```bash
-    npm install
-    ```
-
-# **Environment Setup**
-Copy `.env.example` to `.env` in the root directory and fill in the values. All of these are required; the server exits at startup and lists any that are missing (see `config/env.ts`).
-
-- **DATABASE_URL**: PostgreSQL connection string (`docker compose up -d` starts a local database that matches the example value)
-- **FRONTEND_URL**: URL for your frontend application
-- **SECRET_KEY**: Secret key for signing tokens
-- **DEFAULT_PICTURE**: Default profile picture URL
-- **DEFAULT_GROUP_PICTURE**: Default group picture URL
-- **CLOUDINARY_CLOUD_NAME**, **CLOUDINARY_API_KEY**, **CLOUDINARY_API_SECRET**: Cloudinary credentials for media uploads
-
-`.env` is gitignored. In production, set these as real environment variables on your host instead of using a file. `PORT` is optional (default 3000).
-
-# **Running the Project**
-
-Requires Node 20.6+ (uses `--env-file`).
-
+## Setup
 ```bash
-npm run migrate:deploy   # apply migrations
-npm run dev              # development server (tsx watch, reads .env)
-npm run build && npm start   # production: compile to dist/, then run
-npm run db:seed          # sample data (needs users johndoe and janedoe to exist)
-npm run db:seed:guest    # demo "guest" account (guest / iamaguest) with contacts, groups and messages
-npm run db:reset         # delete all users, groups and messages
+git clone https://github.com/kiffoh/messaging-app-backend.git
+cd messaging-app-backend
+npm install
+cp .env.example .env     # fill in the values
+docker compose up -d db  # local dev database on port 5432
+npm run migrate:deploy
+npm run dev
+```
+
+All variables in `.env.example` are required; the server exits at startup and lists any that are missing (`src/config/env.ts`). `PORT` is optional (default 3000). `.env` is gitignored.
+
+- `DATABASE_URL`: PostgreSQL connection string (the example value matches `docker compose`)
+- `FRONTEND_URL`: allowed CORS origin
+- `SECRET_KEY`: JWT signing secret
+- `DEFAULT_PICTURE`, `DEFAULT_GROUP_PICTURE`: fallback image URLs
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: image uploads
+
+### Scripts
+| Script | Does |
+|---|---|
+| `npm run dev` | dev server (tsx watch, reads `.env`) |
+| `npm run build` / `npm start` | compile to `dist/`, run it |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | integration and unit tests (see Testing) |
+| `npm run migrate:dev` / `migrate:deploy` | create or apply migrations |
+| `npm run db:seed:guest` | demo `guest` account with contacts, groups and messages |
+| `npm run db:seed` | sample data (needs users `johndoe` and `janedoe`) |
+| `npm run db:reset` | delete all users, groups and messages in the dev database |
+| `npm run openapi` | regenerate `openapi.json` |
+
+## API
+Interactive docs are served at `/docs` (Swagger UI).
+
+Every route needs `Authorization: Bearer <jwt>` except the two auth routes. The caller is always the user id in the token. Bodies are JSON, except where multipart is noted (the file field is always `photo`).
+
+| Method and path | Body | Success | Errors |
+|---|---|---|---|
+| `POST /auth/signup` | `{username (1-10 chars), password}` | 201 `{token, user}` | 400, 409 |
+| `POST /auth/login` | `{username, password}` | 200 `{token, user}` | 401 |
+| `GET /users` | | 200 `[{id, username, photo}]` | |
+| `GET /users/:id` | | 200 user profile with `contacts` | 404 |
+| `PUT /users/:id` | multipart `{username?, bio?, photo?}` | 200 user profile | 403 not self, 409 |
+| `DELETE /users/:id` | | 204 | 403 not self |
+| `PUT /users/:id/contacts` | `{contactIds: number[]}` | 200 user profile | 403 not self, 404 |
+| `GET /groups` | | 200 the caller's chats, newest first, with `members` and `messages` | |
+| `POST /groups` | JSON or multipart `{memberIds, directMsg, name?, bio?, photo?}` | 201 the new chat, or 200 the existing DM | 400, 404 |
+| `GET /groups/:id` | | 200 group with `members`, `admins` | 403 non-member, 404 |
+| `PUT /groups/:id` | multipart `{name?, bio?, photo?}` | 200 group | 403 non-admin, 404 |
+| `DELETE /groups/:id` | | 204, its messages are deleted too | 403 non-admin, 404 |
+| `POST /groups/:id/messages` | multipart `{content?, photo?}` | 201 message | 400 empty, 403 non-member |
+| `PUT /groups/:id/messages/:messageId` | `{content}` | 200 message | 403 non-author, 404 |
+| `DELETE /groups/:id/messages/:messageId` | | 204 | 403 non-author, 404 |
+
+Notes:
+- `PUT /users/:id/contacts` adds the given users to the existing contacts.
+- `POST /groups`: the caller is always added as a member. For a direct message (`directMsg: true`), `memberIds` must hold exactly one id, and `name`, `bio` and `photo` are ignored. For a group the caller becomes admin, and an empty name defaults to the member usernames. In multipart requests send `memberIds` as a JSON string (`"[2,3]"`) and `directMsg` as `"true"` or `"false"`.
+- `GET /groups` names unnamed chats for the caller: a DM shows the other member's username and photo.
+- A message needs text, a photo or both. User, group and message responses never include passwords.
+- Errors are `{message}`. Validation errors (400) are `{message: "Validation failed", errors: [{field, message}]}`.
+- User and group profiles also carry `createdAtDate` (`dd-mm-yyyy`) and `createdAtTime` (`hh:mm`), both UTC.
+
+### Socket.IO
+Connect with the token: `io(url, { auth: { token } })`. An invalid token is rejected with `unauthorized`. Each socket joins the room `user:<id>`. The server only emits, clients do not send events. These go to every member of the group, including the sender:
+
+| Event | Payload |
+|---|---|
+| `newMessage` | message |
+| `messageUpdated` | message |
+| `messageDeleted` | message id (number) |
+
+## Database
+Prisma with PostgreSQL, schema in `src/prisma/schema.prisma`, migrations in `src/prisma/migrations`.
+- `User`: `username` (unique), hashed `password`, `bio`, `photo`, self-referential `contacts`.
+- `Group`: one model for group chats and direct messages (`directMsg` flag), with `members` and `admins`.
+- `Message`: optional `content` and `photoUrl`, `authorId` is null if the author's account was deleted.
+
+## Authentication
+`POST /auth/signup` and `/auth/login` return a JWT (HS256, expires in 1 hour) and the user. The token claims are `id`, `username`, `bio`, `createdAtDate`, `createdAtTime` and `photo`. Passwords are hashed with bcrypt.
+
+## Testing
+Tests run against a throwaway Postgres on port 5433 and never touch the dev database (`resetDb()` refuses any `DATABASE_URL` that does not contain `messaging_app_test`).
+```bash
+docker compose up -d db-test
 npm test
 ```
-
-### Debugging
-To run with debug logs:
-```bash
-DEBUG=easymessage:* npm run dev
-```
-
-# API Documentation
-
-This document outlines all available endpoints in the application. The API is organized into three main sections:
-- Users
-- Groups
-- Messages
-
-### Request Formats
-- For file uploads: `multipart/form-data`
-- For all other requests: `application/json`
-
-## User Routes
-### Create User
-`POST /users/signup`
-- **Description**: Creates a new user account
-- **Request Body**:
-```json
-{
-    "username": "johndoe",
-    "password": "password123"
-}
-```
-- **Response:**
-    - **Success (201):**
-    ```json
-    {
-        "user": {
-            "id": 1,
-            "username": "johndoe",
-            "bio": null,
-            "createdAt": "..."
-        },
-        "token": "jwt-token-string"
-    }
-    ```
-    - **Error (409)** - Username exists: 
-    ```json
-    {
-        "status": "error",
-        "message": "Username already in use. Please try again with a different username"
-    }
-    ```
-    - **Error (500)** - Server error:
-    ```json
-    {
-        "status": "error",
-        "message": "An error occurred when trying to create the user"
-    }
-    ```
-
-### Login User
-`POST /users/login`
-- **Description:** Authenticates a user and provides a JWT token
-- **Request Body:**
-```json
-{
-  "username": "johndoe",
-  "password": "password123"
-}
-```
-- **Response:**
-    - **Success (200):** 
-    ```json
-    {
-        "token": "jwt-token-string",
-        "message": "Login successful"
-    }
-    ```
-    - **Error (400):**
-    ```json
-    {
-        "message": "Invalid username or password."
-    }
-    ```
-
-### Get User Profile
-`GET /users/:userId/profile`
-- **Description:** Fetches the profile information of a user by userId.
-- **URL Parameters:**
-    - `userId`: User's unique identifier (number)
-- **Response:**
-    - **Success (200):** 
-    ```json
-    {
-        "id": 1,
-        "username": "johndoe",
-        "bio": "User bio",
-        "photo": "photo/path",
-        "createdAtDate": "23-10-2024",
-        "createdAtTime": "14:30",
-        "contacts": []
-    }
-    ```
-    - **Error (404):**
-    ```json
-    {
-        "message": "User not found"
-    }
-    ```
-    
-### Update User Profile    
-`PUT /users/:userId/profile`
-- **Description:** Updates the profile of a user, including uploading a profile photo.
-- **Content-Type**: `multipart/form-data` for profile photo and other user details.
-- **URL Parameters:**
-    - `userId`: User's unique identifier (number)
-- **Request Body:**
-    - `username` (optional): New username
-    - `bio` (optional): User biography
-    - `photo` (optional): Profile photo file
-- **Response:**
-    - **Success (200):** Returns updated user object with contacts
-    - **Error (409):** - Username exists:
-    ```json
-    {
-        "status": "error",
-        "message": "Username already in use. Please try again with a different username"
-    }
-    ```
-
-### Delete User Profile
-`DELETE /users/:userId/profile`
-- **Description:** Deletes user account and related data
-- **URL Parameters:**
-    - `userId`: User's unique identifier (number)
-- **Response:**
-    - **Success (200):**
-    ```json
-    {
-        "message": "User successfully deleted."
-    }
-    ```
-    - **Error (404):** 
-    ```json
-    {
-        "message": "User not found."
-    }
-    ```
-
-### Get All Usernames
-`GET /users/usernames`
-- **Description:** Retrieves all usernames and basic user information
-- **Response:**
-    - **Success (200):**
-    ```json
-    [
-        {
-            "id": 1,
-            "username": "johndoe",
-            "photo": "photo/path"
-        }
-    ]
-    ```
-    - **Error (404):**
-    ```json
-    {
-        "message": "No users found."
-    }
-    ```
-
-### Update User Contacts
-`PUT /users/:userId/update-contacts`
-- **Description:** Updates the user's contact list.
-- **URL Parameters:**
-    - `userId`: User's unique identifier (number)
-- **Request Body:** An array of user IDs to be added to the contact list.
-```json
-{
-  "selectedContacts": [1, 2, 3]  // Array of user IDs
-}
-```
-- **Response:**
-    - **Success (200):** Returns updated user object with contacts
-    - **Error (500):** 
-    ```json
-    {
-        "message": "An unknown error occurred when trying to update the user's contacts."
-    }
-    ```
-
-## Message Routes
-
-### Get Messages
-`GET /messages/:userId`
-- **Description**: Retrieves all messages for a specific user
-- **URL Parameters:**
-    - `userId`: User's unique identifier (number)
-- **Response:**
-    - **Success (200):**
-    ```json
-    {
-        "messages": [
-            {
-                "id": 1,
-                "content": "Hello world!",
-                "senderId": 123,
-                "chatId": 456,
-                "photoUrl": "photo/path",
-                "createdAt": "2024-03-21T10:30:00Z",
-                "updatedAt": "2024-03-21T10:30:00Z"
-            }
-        ]
-    }
-    ```
-    - **Error (500):**
-    ```json
-    {
-        "message": "An unknown error occurred when trying to retrieve messages."
-    }
-    ```
-
-### Create Message
-`POST /messages/:chatId`
-- **Description:** Creates a new message in a specific chat
-- **Content-Type**: `multipart/form-data` for message with photo
-- **URL Parameters:**
-    - `chatId`: Chat's unique identifier (number)
-- **Request Body:**
-    - `content`: Message text
-    - `photoUrl` (optional): Message photo file
-- **Response:**
-    - **Success (201):**
-    ```json
-    {
-        "message": {
-            "id": 2,
-            "content": "Hello everyone!",
-            "senderId": 123,
-            "chatId": 456,
-            "photoUrl": "photos/message123.jpg",
-            "createdAt": "2024-03-21T10:35:00Z"
-        }
-    }
-    ```
-    - **Error (500):**
-    ```json
-    {
-        "message": "An unknown error occurred when trying to create the message."
-    }
-    ```
-
-### Update Message
-`PUT /messages/:chatId/:messageId`
-- **Description:** Updates an existing message
-- **URL Parameters:**
-    - `chatId`: Chat's unique identifier (number)
-    - `messageId`: Message's unique identifier (number)
-- **Request Body:**
-```json
-{
-    "content": "Updated message content"
-}
-```
-- **Response:**
-    - **Success (200):**
-    ```json
-    {
-        "message": {
-            "id": 2,
-            "content": "Updated message content",
-            "senderId": 123,
-            "chatId": 456,
-            "photoUrl": "photos/message123.jpg",
-            "createdAt": "2024-03-21T10:35:00Z",
-            "updatedAt": "2024-03-21T10:40:00Z"
-        }
-    }
-    ```
-    - **Error (500):**
-    ```json
-    {
-        "message": "An unknown error occurred when trying to update the message."
-    }
-    ```
-
-### Delete Message
-`DELETE /messages/:chatId/:messageId`
-- **Description:** Deletes a specific message
-- **URL Parameters:**
-    - `chatId`: Chat's unique identifier (number)
-    - `messageId`: Message's unique identifier (number)
-- **Response:**
-    - **Success (200):**
-    ```json
-    {
-        "message": "Message successfully deleted"
-    }
-    ```
-    - **Error (500):**
-    ```json
-    {
-        "message": "An unknown error occurred when trying to delete the message."
-    }
-    ```
-
-## Group Routes
-
-### Get Group Profile
-`GET /groups/:groupId/profile`
-- **Description:** Retrieves information about a specific group
-- **URL Parameters:**
-    - `groupId`: Group's unique identifier (number)
-- **Response:**
-    - **Success (200):**
-    ```json
-    {
-        "id": 789,
-        "name": "Project Team",
-        "photo": "photos/group789.jpg",
-        "bio": "Team collaboration group",
-        "createdAtDate": "21-03-2024",
-        "createdAtTime": "10:30",
-        "members": [
-            {
-                "id": 123,
-                "username": "john_doe"
-            }
-        ],
-        "admins": [
-            {
-                "id": 123,
-                "username": "john_doe"
-            }
-        ]
-    }
-    ```
-    - **Error (404):**
-    ```json
-    {
-        "message": "Group not found."
-    }
-    ```
-    - **Error (400):**
-    ```json
-    {
-        "message": "Invalid group ID."
-    }
-    ```
-
-### Update Group Profile
-`PUT /groups/:groupId/profile`
-- **Description:** Updates a group's profile information
-- **Content-Type**: `multipart/form-data` for group photo
-- **URL Parameters:**
-    - `groupId`: Group's unique identifier (number)
-- **Request Body:**
-    - `name` (optional): Group name
-    - `bio` (optional): Group description
-    - `photo` (optional): Group photo file
-- **Response:**
-    - **Success (200):**
-    ```json
-    {
-        "id": 789,
-        "name": "Updated Project Team",
-        "photo": "photos/group789_updated.jpg",
-        "bio": "Our awesome team collaboration group",
-        "createdAtDate": "21-03-2024",
-        "createdAtTime": "10:30"
-    }
-    ```
-    - **Error (400)** - Validation errors:
-    ```json
-    {
-        "status": "error",
-        "errors": [
-            {
-                "field": "name",
-                "message": "Group name is required"
-            }
-        ]
-    }
-    ```
-
-### Delete Group
-`DELETE /groups/:groupId/profile`
-- **Description:** Deletes a specific group
-- **URL Parameters:**
-    - `groupId`: Group's unique identifier (number)
-- **Headers:**
-    - `user-id`: ID of the user attempting to delete (number)
-- **Response:**
-    - **Success (200):**
-    ```json
-    {
-        "message": "Group successfully deleted."
-    }
-    ```
-    - **Error (403):**
-    ```json
-    {
-        "message": "User does not have admin privileges to delete this group."
-    }
-    ```
-    - **Error (404):**
-    ```json
-    {
-        "message": "Group not found."
-    }
-    ```
-
-### Create Direct Message
-`POST /groups/createDirectMessage`
-- **Description:** Creates a new direct message group between users
-- **Request Body:**
-```json
-{
-    "members": [
-        {"id": 123, "username": "john_doe"},
-        {"id": 456, "username": "jane_smith"}
-    ]
-}
-```
-- **Response:**
-    - **Success (201):**
-    ```json
-    {
-        "newGroup": {
-            "id": 790,
-            "name": "jane_smith",
-            "photo": "photos/default.jpg",
-            "directMsg": true,
-            "members": [
-                {
-                    "id": 123,
-                    "username": "john_doe"
-                },
-                {
-                    "id": 456,
-                    "username": "jane_smith"
-                }
-            ],
-            "messages": []
-        }
-    }
-    ```
-    - **Error (400):**
-    ```json
-    {
-        "message": "Group must have at least one member."
-    }
-    ```
-
-### Create Group
-`POST /groups/createGroup`
-- **Description:** Creates a new group chat
-- **Content-Type**: `multipart/form-data` for group photo
-- **Request Body:**
-    - `name` (optional): Group name
-    - `members`: JSON string of member objects
-    - `groupPhoto` (optional): Group photo file
-- **Response:**
-    - **Success (201):**
-    ```json
-    {
-        "newGroup": {
-            "id": 791,
-            "name": "Project Team",
-            "photo": "photos/group791.jpg",
-            "directMsg": false,
-            "members": [
-                {
-                    "id": 123,
-                    "username": "john_doe"
-                },
-                {
-                    "id": 456,
-                    "username": "jane_smith"
-                }
-            ],
-            "messages": [],
-            "admins": [
-                {
-                    "id": 123,
-                    "username": "john_doe"
-                }
-            ]
-        }
-    }
-    ```
-    - **Error (400)** - Validation errors:
-    ```json
-    {
-        "status": "error",
-        "errors": [
-            {
-                "field": "members",
-                "message": "Members array is required"
-            }
-        ]
-    }
-    ```
-
-## Notes
-- All routes utilise Socket.IO for real-time updates
-- Dates are formatted as "DD-MM-YYYY" and times as "HH:MM" in UTC
-- Photo uploads are handled through Multer
-- Direct message groups automatically generate names based on participants
-
-## Error Responses
-All endpoints may return these common errors:
-
-- **500 Internal Server Error:** When an unexpected error occurs
-- **400 Bad Request:** When request validation fails
-
-# **Database Schema**
-The schema is implemented using Prisma with PostgreSQL as the database provider.
-
-To apply the database schema migrations, run the following command:
-```bash
-npx prisma migrate dev
-```
-
-Alternatively, you can use the commands defined in the package.json, which allow specifying the development or production database:
-```bash
-"migrate:dev": "cross-env DATABASE_URL=development-url npx prisma migrate dev",
-"migrate:prod": "cross-env DATABASE_URL=production-url npx prisma migrate dev",
-```
-
-### Notes
-- **Environment-specific migrations**: Ensure that you set the `NODE_ENV` to either `development` or `production` before running the migration commands.
-- **Windows users**: You must use `cross-env` to set environment variables, as shown in the `package.json` commands.
-- **macOS/Linux users**: You can remove `cross-env` from the commands, as environment variables can be set directly in the terminal.
-
-## Models
-
-### User
-Represents an application user with their profile information and relationships.
-
-#### Fields
-- `id` (Int): Primary key, auto-incrementing
-- `username` (String): Unique identifier for the user
-- `password` (String): Encrypted user password
-- `bio` (String?): Optional user biography
-  - Default: "Hello, I am on EasyMessage!"
-- `photo` (String?): Profile picture URL
-  - Default: Cloudinary-hosted default image
-- `createdAt` (DateTime): Timestamp of account creation
-
-#### Relationships
-- `messages`: One-to-many relation with Message model
-  - A user can send multiple messages
-- `groups`: Many-to-many relation with Group model via "GroupMembers"
-  - Users can be members of multiple groups
-- `adminGroups`: Many-to-many relation with Group model via "GroupAdmins"
-  - Users can be administrators of multiple groups
-- `contacts`: Self-referential many-to-many relationship
-  - Manages user's contact list
-  - Bidirectional relationship through `contactedBy`
-
-### Message
-Handles the storage and management of messages within groups and direct chats.
-
-#### Fields
-- `id` (Int): Primary key, auto-incrementing
-- `content` (String?): Optional message text
-  - Nullable to support photo-only messages
-- `photoUrl` (String?): Optional URL for attached images
-- `createdAt` (DateTime): Message creation timestamp
-- `updatedAt` (DateTime): Last modification timestamp
-- `authorId` (Int?): Foreign key to User model
-- `groupId` (Int): Foreign key to Group model
-
-#### Relationships
-- `author`: Many-to-one relation with User model
-  - Nullable to handle deleted user accounts
-- `group`: Many-to-one relation with Group model
-  - Every message belongs to a group/chat
-
-### Group
-Manages both group chats and direct messages between users.
-
-#### Fields
-- `id` (Int): Primary key, auto-incrementing
-- `name` (String?): Optional group name
-- `photo` (String?): Optional group avatar URL
-- `createdAt` (DateTime): Group creation timestamp
-- `updatedAt` (DateTime): Last activity timestamp
-- `directMsg` (Boolean): Flags whether this is a direct message chat
-- `bio` (String?): Optional group description
-  - Default: "We are the greatest tribe on EasyMessage."
-
-#### Relationships
-- `members`: Many-to-many relation with User model via "GroupMembers"
-- `admins`: Many-to-many relation with User model via "GroupAdmins"
-- `messages`: One-to-many relation with Message model
-
-#### Indexes
-- Combined index on `[updatedAt, createdAt]`
-  - Optimises queries for recent activity and chat history
-
-### Key Features
-- **Direct Messages**: Implemented through the Group model with `directMsg` flag
-- **Group Chats**: Full support for multi-user conversations
-- **Admin Controls**: Separate tracking of group administrators
-- **Contact Management**: Built-in contact list functionality
-- **Media Support**: Handles both text and image messages
-- **Soft Deletion**: Messages persist even if users are deleted
-
-### Notes
-- The schema supports both one-on-one and group messaging through a unified Group model
-- User photos default to a Cloudinary-hosted image
-- Messages can contain text, images, or both
-- Groups and users maintain separate creation and update timestamps for activity tracking
-
-
-# Authentication and Authorisation
-The application uses JSON Web Tokens (JWT) for stateless authentication, implemented through Passport.js with a Local Strategy for credential verification. User passwords are securely hashed using bcrypt before storage.
-
-## Authentication Implementation
-- **Strategy**: Passport Local Strategy (stateless)
-- **Token Type**: JSON Web Tokens (JWT)
-- **Password Security**: 
-    - Passwords are hashed using bcrypt
-    - Passwords are never stored in plain text
-
-### Token Structure
-JWT payload includes:
-- `id`: User's unique identifier
-- `username`: User's username
-- `bio`: User's biography
-- `createdAtDate`: Formatted date of account creation
-- `createdAtTime`: Formatted time of account creation
-- `photo`: URL to user's profile photo
-
-### Authentication Flow
-1. **Login Process**:
-  - User submits username and password
-  - Credentials are validated against database
-  - Upon successful validation:
-    - JWT token is generated with user data
-    - Token is returned to client
-    - Token expires in 1 hour
-
-2. **Token Configuration**:
-- Expiration: 1 hour
-- Signing algorithm: HS256
-- Token must be included in Authorization header for protected routes
-
-3. **Error Handling**:
-- Invalid credentials return 400 Bad Request
-- Server errors return 500 Internal Server Error
-- Detailed error messages for debugging
-
-## Security Measures
-- Stateless authentication using JWT
-- Password hashing with bcrypt
-- Environment-based secret key configuration
-- Token expiration for security
-- Error logging for authentication failures
-
-### Environment Variables Required
-```env
-SECRET_KEY=your_jwt_secret_key
-```
-
-### Error Responses
-- Invalid Credentials:
-```json
-{
-  "message": "Invalid username or password."
-}
-```
-- Successful Login:
-```json
-{
-  "token": "jwt_token_string",
-  "message": "Login successful"
-}
-```
-
-# Testing
-This project uses [Jest](https://jestjs.io/) as the testing framework. The tests primarily focus on the functionality of group and user deletion, ensuring the correct cascading behavior for related data such as messages, and group memberships.
-
-### Running Tests
-
-To run the test suite, execute the following command:
-
-```bash
-npm test
-```
-
-### Group Deletion Tests
-- **Test Description**: These tests verify that when a group is deleted, its messages are removed and its members and admins are disconnected from it.
-The following cases are covered:
-- The group and its messages should be deleted.
-- Users should be disconnected from the group as members or admins.
-
-### User Deletion Tests
-- **Test Description**: These tests verify that when a user is deleted, the associated group data is updated accordingly, including checking that the user is no longer a member or admin of any group, and their direct messages (DMs) reflect their removal.
-The following cases are covered:
-- The user is successfully deleted.
-- After deletion, the groups and DMs associated with the user reflect the removal of that user (e.g., admin status removed, members reduced).
-
-### Notes
-- **Database transactions**: The tests use Prisma's $transaction method to handle the deletion process and ensure the related data is removed safely.
-- **Environment setup**: Ensure your .env.test or equivalent testing environment is properly configured before running the tests.
-- **Post-test cleanup**: The afterAll() hook in the test files ensures the database connection is properly closed after the tests run.
+`npm test` first applies migrations to the test database (`pretest`), then runs Vitest with `.env.test`. Integration tests in `tests/integration` call the API through Supertest and use `socket.io-client` for the socket events. CI runs the same steps against a Postgres service container.
 
 ## Deployment
 
