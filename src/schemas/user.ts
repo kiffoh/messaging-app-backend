@@ -1,12 +1,9 @@
 import { z } from "zod";
 import { id, idParam, dateTime } from "../lib/schemas.js";
-import { userSignUpSchema } from "../middleware/validation.js";
 
 export const userIdParams = z.object({ userId: idParam });
 
-// Request bodies. The validators only check lengths, the controllers also need these fields.
-export const signUpBody = userSignUpSchema.required({ username: true }).extend({ password: z.string() });
-export const logInBody = z.object({ username: z.string(), password: z.string() });
+// Request bodies.
 export const contactsBody = z.object({ selectedContacts: z.array(id) });
 
 // A row from the User table.
@@ -31,5 +28,3 @@ export const userWithContactsAndFollowers = userWithContacts.extend({ contactedB
 
 export const userSummary = z.object({ id, username: z.string(), photo: z.string() });
 
-export const signUpResult = z.object({ user, token: z.string().describe("JWT, expires in 1 hour") });
-export const logInResult = z.object({ token: z.string().describe("JWT, expires in 1 hour"), message: z.string() });

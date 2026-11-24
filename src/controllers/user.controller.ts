@@ -1,60 +1,11 @@
-import type { Request, Response, NextFunction } from "express";
-import { Prisma, type User } from "@prisma/client";
+import type { Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
 import { withFormattedDate } from "../lib/users.js";
-import bcrypt from 'bcrypt';
-import passport from 'passport';
-import { signToken } from '../lib/token.js';
 
 const isUniqueViolation = (error: unknown) =>
     error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
-
-async function createUser(req: Request, res: Response) {
-    try {
-        const {username, password} = req.body;
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const user = await prisma.user.create({
-            data: {
-                username: username,
-                password: hashedPassword
-            }
-        })
-        
-        // Edit createdAt to desired format
-        
-        const token = signToken(user);
-
-        return res.status(201).json({ user, token }); // Return both user and token
-    } catch (error) {
-        if (isUniqueViolation(error)) {
-            return res.status(409).json({ 
-                message: 'Username already in use. Please try again with a different username' 
-            });
-        }
-        throw error;
-    }
-}
-
-function logIn(req: Request, res: Response, next: NextFunction) {
-    passport.authenticate('local', {session: false}, (err: unknown, user: User | false, info: unknown) => {
-        if (err) {
-            return next(err);
-        }
-
-        if (!user) {
-            return res.status(400).json({message: 'Invalid username or password.'})
-        }
-
-        // Edit createdAt to desired format
-        const token = signToken(user);
-    
-        // Send the token to the client
-        return res.status(200).json({ token, message: 'Login successful' });
-    })(req, res, next);
-}
 
 async function getUser(req: Request, res: Response) {
     const {userId} = req.params as Record<string, string>;
@@ -186,8 +137,6 @@ async function deleteUser(req: Request, res: Response) {
 }
 
 export {
-    createUser,
-    logIn,
     getUser,
     getAllUsernames,
     updateUser,

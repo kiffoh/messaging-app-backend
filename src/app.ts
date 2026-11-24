@@ -3,8 +3,6 @@ import createError from 'http-errors';
 import express, { type Request, type Response, type NextFunction } from "express";
 import logger from 'morgan';
 import cors from 'cors';
-import passport from 'passport';
-import "./middleware/passport.js";
 import { handleError } from './middleware/error.js';
 
 import { io } from './lib/io.js';
@@ -15,6 +13,7 @@ console.log(`Current environment: ${process.env.NODE_ENV || "default"}`);
 import swaggerUi from 'swagger-ui-express';
 import { openApiDocument } from './openapi/document.js';
 import { mountRoutes } from './openapi/defineRoute.js';
+import { authRoutes } from './modules/auth/auth.routes.js';
 import { userRoutes } from './routes/users.js';
 import { messageRoutes } from './routes/messages.js';
 import { groupRoutes } from './routes/groups.js';
@@ -34,12 +33,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({origin: env.FRONTEND_URL}));
 
-app.use(passport.initialize());
-
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 const router = express.Router();
-mountRoutes(router, [...userRoutes, ...messageRoutes, ...groupRoutes]);
+mountRoutes(router, [...authRoutes, ...userRoutes, ...messageRoutes, ...groupRoutes]);
 app.use(router);
 
 // catch 404 and forward to error handler

@@ -1,6 +1,6 @@
 import * as userController from "../controllers/user.controller.js";
 import { uploadUserPhoto } from "../middleware/upload.js";
-import { userSchema, validateUser, validateUserSignUp } from "../middleware/validation.js";
+import { userSchema, validateUser } from "../middleware/validation.js";
 import { defineRoute } from "../openapi/defineRoute.js";
 import { badRequest, binary, formBody, jsonBody, jsonResponse, messageOnly } from "../lib/schemas.js";
 import * as s from "../schemas/user.js";
@@ -11,37 +11,6 @@ const tags = ["Users"];
 const updateUserBody = userSchema.extend({ photo: binary.optional().describe("Image file") });
 
 export const userRoutes = [
-  defineRoute({
-    method: "post",
-    auth: false, // until the module is moved onto token auth
-    path: "/users/signup",
-    summary: "Create a user",
-    tags,
-    request: { body: jsonBody(s.signUpBody) },
-    responses: {
-      201: jsonResponse("User created", s.signUpResult),
-      400: badRequest,
-      409: jsonResponse("Username already in use", messageOnly),
-      500: jsonResponse("Could not create the user", messageOnly),
-    },
-    middleware: [validateUserSignUp],
-    handler: userController.createUser,
-  }),
-
-  defineRoute({
-    method: "post",
-    auth: false, // until the module is moved onto token auth
-    path: "/users/login",
-    summary: "Log in and receive a JWT",
-    tags,
-    request: { body: jsonBody(s.logInBody) },
-    responses: {
-      200: jsonResponse("Logged in", s.logInResult),
-      400: jsonResponse("Invalid username or password", messageOnly),
-    },
-    handler: userController.logIn,
-  }),
-
   defineRoute({
     method: "get",
     auth: false, // until the module is moved onto token auth

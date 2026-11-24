@@ -1,12 +1,13 @@
 import { OpenAPIRegistry, OpenApiGeneratorV31 } from "@asteasolutions/zod-to-openapi";
 import { registerRoutes } from "./defineRoute.js";
+import { authRoutes } from "../modules/auth/auth.routes.js";
 import { userRoutes } from "../routes/users.js";
 import { groupRoutes } from "../routes/groups.js";
 import { messageRoutes } from "../routes/messages.js";
 
 const registry = new OpenAPIRegistry();
 registry.registerComponent("securitySchemes", "bearerAuth", { type: "http", scheme: "bearer", bearerFormat: "JWT" });
-registerRoutes(registry, [...userRoutes, ...groupRoutes, ...messageRoutes]);
+registerRoutes(registry, [...authRoutes, ...userRoutes, ...groupRoutes, ...messageRoutes]);
 
 export const openApiDocument = new OpenApiGeneratorV31(registry.definitions).generateDocument({
   openapi: "3.1.0",
