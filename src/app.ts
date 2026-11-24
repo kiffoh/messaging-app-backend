@@ -28,7 +28,7 @@ io.attach(server, {
   },
 });
 
-app.use(logger('dev'));
+if (process.env.NODE_ENV !== "test") app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({origin: env.FRONTEND_URL}));
