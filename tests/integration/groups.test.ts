@@ -96,3 +96,19 @@ it("DELETE /groups/:id as a non-admin member returns 403; as admin returns 204 a
   expect(await prisma.group.count({ where: { id: g.id } })).toBe(0);
   expect((await request(app).delete(`/groups/${g.id}`).set(auth(alice.token))).status).toBe(404);
 });
+
+it("DM lookup ignores a legacy 3-member directMsg chat containing the pair", async () => {
+  const alice = await makeUser("alice");
+  const bob = await makeUser("bob");
+  const carol = await makeUser("carol");
+  const legacy = await makeGroup({ members: [alice.user.id, bob.user.id, carol.user.id], directMsg: true });
+  const res = await request(app).post("/groups").set(auth(alice.token)).send({ memberIds: [bob.user.id], directMsg: true });
+  expect(res.status).toBe(201);
+  expect(res.body.id).not.toBe(legacy.id);
+});
+
+it("PUT /groups/:id rejects a blank name", async () => {
+  const alice = await makeUser("alice");
+  const g = await makeGroup({ members: [alice.user.id], admins: [alice.user.id] });
+  expect((await request(app).put(`/groups/${g.id}`).set(auth(alice.token)).field("name", "  ")).status).toBe(400);
+});

@@ -88,7 +88,7 @@ export async function createChat(
 
   if (directMsg) {
     const existing = await prisma.group.findFirst({
-      where: { directMsg: true, AND: [{ members: { some: { id: callerId } } }, { members: { some: { id: memberIds[0] } } }] },
+      where: { directMsg: true, AND: [{ members: { some: { id: callerId } } }, { members: { some: { id: memberIds[0] } } }, { members: { every: { id: { in: [callerId, memberIds[0]] } } } }] },
       include: chatInclude,
     });
     if (existing) return { chat: nameForViewer(existing, callerId), created: false };

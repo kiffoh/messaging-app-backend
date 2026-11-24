@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
 import { z } from "zod";
 import { defineRoute } from "../../openapi/defineRoute.js";
-import { badRequest, formBody, jsonBody, jsonResponse, messageOnly } from "../../lib/schemas.js";
+import { badRequest, formBody, jsonResponse, messageOnly } from "../../lib/schemas.js";
 import { uploadGroupPhoto } from "../../middleware/upload.js";
 import { validate } from "../../middleware/validate.js";
 import { assertAdmin } from "./groups.service.js";

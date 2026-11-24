@@ -10,9 +10,9 @@ const bio = z.string().trim().max(200, "Bio must be a maximum of 200 characters.
 // z.coerce.boolean() would turn the multipart string "false" into true
 const bool = z.preprocess((v) => (v === "true" ? true : v === "false" ? false : v), z.boolean());
 
-export const updateGroupBody = z.object({ name: name.optional(), bio: bio.optional() });
+export const updateGroupBody = z.object({ name: name.min(1, "Group name cannot be blank.").optional(), bio: bio.optional() });
 export const updateGroupForm = updateGroupBody.extend({ photo: binary.optional().describe("Image file") });
-export const createGroupBody = updateGroupBody.extend({ memberIds: idList, directMsg: bool });
+export const createGroupBody = updateGroupBody.extend({ name: name.optional(), memberIds: idList, directMsg: bool });
 export const createGroupForm = createGroupBody.extend({
   memberIds: z.string().describe("JSON array of user ids, e.g. [2,3] (an array when sent as JSON)"),
   directMsg: z.string().describe('"true" or "false" (a boolean when sent as JSON)'),

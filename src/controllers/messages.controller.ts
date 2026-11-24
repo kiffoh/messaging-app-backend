@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from "express";
-import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
 import { io } from "../lib/io.js";
 
