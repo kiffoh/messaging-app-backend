@@ -2,29 +2,11 @@ import * as messageController from "../controllers/messages.controller.js";
 import { uploadMessagePhoto } from "../middleware/upload.js";
 import { defineRoute } from "../openapi/defineRoute.js";
 import { messageOnly, formBody, jsonBody, jsonResponse } from "../lib/schemas.js";
-import { userIdParams } from "../modules/users/users.schemas.js";
-import { groupWithMembersAndMessages } from "../schemas/group.js";
 import * as s from "../schemas/message.js";
-import { z } from "zod";
 
 const tags = ["Messages"];
 
 export const messageRoutes = [
-  defineRoute({
-    method: "get",
-    auth: false, // until the module is moved onto token auth
-    path: "/messages/{userId}",
-    summary: "List every chat a user is in, with members and messages",
-    description: "Newest chat first, newest message first. Unnamed chats are named for this user.",
-    tags,
-    request: { params: userIdParams },
-    responses: {
-      200: jsonResponse("The user's chats", z.array(groupWithMembersAndMessages)),
-      500: jsonResponse("Internal Server Error", messageOnly),
-    },
-    handler: messageController.getMessages,
-  }),
-
   defineRoute({
     method: "post",
     auth: false, // until the module is moved onto token auth

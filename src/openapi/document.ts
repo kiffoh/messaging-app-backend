@@ -2,7 +2,7 @@ import { OpenAPIRegistry, OpenApiGeneratorV31 } from "@asteasolutions/zod-to-ope
 import { registerRoutes } from "./defineRoute.js";
 import { authRoutes } from "../modules/auth/auth.routes.js";
 import { userRoutes } from "../modules/users/users.routes.js";
-import { groupRoutes } from "../routes/groups.js";
+import { groupRoutes } from "../modules/groups/groups.routes.js";
 import { messageRoutes } from "../routes/messages.js";
 
 const registry = new OpenAPIRegistry();

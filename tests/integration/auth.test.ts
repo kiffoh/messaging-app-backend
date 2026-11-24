@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import request from "supertest";
 import { it, expect, beforeEach } from "vitest";
 import { app } from "../../src/app.js";
@@ -56,12 +57,10 @@ it("login with an unknown user returns the same 401", async () => {
   expect(res.body).toEqual({ message: "Invalid username or password." });
 });
 
-// Task 5 mounts /groups and enables this.
-it.todo("a token signed with another secret is rejected");
-// it("a token signed with another secret is rejected", async () => {
-//   const res = await request(app).get("/groups").set("Authorization", `Bearer ${jwt.sign({ id: 1 }, "other")}`);
-//   expect(res.status).toBe(401);
-// });
+it("a token signed with another secret is rejected", async () => {
+  const res = await request(app).get("/groups").set("Authorization", `Bearer ${jwt.sign({ id: 1 }, "other")}`);
+  expect(res.status).toBe(401);
+});
 
 it("verifyToken rejects garbage with a 401", () => {
   expect(() => verifyToken("garbage")).toThrow(expect.objectContaining({ status: 401 }));

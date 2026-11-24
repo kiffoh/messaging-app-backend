@@ -3,53 +3,6 @@ import { env } from "../config/env.js";
 import { prisma } from "../lib/prisma.js";
 import { io } from "../lib/io.js";
 
-async function getMessages(req: Request, res: Response, next: NextFunction) {
-    const {userId} = req.params as Record<string, string>;
-    const userID = parseInt(userId)
-
-    const userMessages = await prisma.group.findMany({
-        where: {
-            members: {
-                some: {
-                    id: userID,
-                }
-            }
-        },
-        include: {
-            members: true,
-            messages: {
-                orderBy: {
-                    createdAt: 'desc'
-                }
-            },
-        },
-        orderBy: {
-            updatedAt: 'desc',
-        }
-        
-    })
-
-    // Name the unnamed groups/direct messages, specific to the user
-    userMessages.forEach(chat => {
-        if (chat.name === null) {
-            if (chat.members.length  <= 2) {
-                const receipient = chat.members.find(member => member.id !== userID);
-                chat.name = receipient!.username;
-                chat.photo = receipient!.photo;
-            } else {
-                const otherMembers = chat.members.filter(member => member.id !== userID);
-                const otherMembersUsernames: string[] = []
-                otherMembers.forEach(member => otherMembersUsernames.push(member.username))
-                chat.name = otherMembersUsernames.slice(0, otherMembersUsernames.length - 1).join(', ') + ' & ' + otherMembersUsernames.slice(otherMembersUsernames.length - 1);
-            }
-        }
-        if (chat.photo === null && chat.members.length === 2) chat.photo = env.DEFAULT_PICTURE;
-        else if (chat.photo === null) chat.photo = env.DEFAULT_GROUP_PICTURE
-    })
-
-    res.json(userMessages);
-}
-
 async function createMessage(req: Request, res: Response, next: NextFunction) {
     const {content, groupId, authorId} = req.body;
     const groupID = parseInt(groupId);
@@ -118,7 +71,6 @@ async function deleteMessage(req: Request, res: Response, next: NextFunction) {
 
 
 export {
-    getMessages,
     createMessage,
     updateMessage,
     deleteMessage
