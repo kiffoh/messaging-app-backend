@@ -36,17 +36,15 @@ async function load(groupId: number) {
 }
 
 export async function assertMember(groupId: number, userId: number) {
-  if (!(await load(groupId)).members.some((m) => m.id === userId)) throw notMember();
+  const memberIds = (await load(groupId)).members.map((m) => m.id);
+  if (!memberIds.includes(userId)) throw notMember();
+  return memberIds;
 }
 
 export async function assertAdmin(groupId: number, userId: number) {
   if (!(await load(groupId)).admins.some((a) => a.id === userId)) {
     throw createError(403, "Only a group admin can do that.");
   }
-}
-
-export async function memberIdsOf(groupId: number) {
-  return (await load(groupId)).members.map((m) => m.id);
 }
 
 export async function listChats(userId: number) {
@@ -94,13 +92,12 @@ export async function createChat(
     if (existing) return { chat: nameForViewer(existing, callerId), created: false };
   }
 
-  const usernames = ids.map((id) => users.find((u) => u.id === id)!.username);
   const chat = await prisma.group.create({
     data: directMsg
       ? { directMsg, members: { connect: ids.map((id) => ({ id })) } }
       : {
           directMsg,
-          name: input.name || nameFromMembers(usernames),
+          name: input.name || undefined, // unnamed chats are named per viewer by nameForViewer
           bio: input.bio || undefined,
           photo: input.photo ?? env.DEFAULT_GROUP_PICTURE,
           members: { connect: ids.map((id) => ({ id })) },

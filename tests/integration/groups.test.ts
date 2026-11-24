@@ -40,14 +40,14 @@ it("POST /groups validates DMs and members", async () => {
   expect((await post({ memberIds: [9999], directMsg: false })).status).toBe(404);
 });
 
-it("POST /groups creates a group with the caller as admin and a default name (multipart string booleans)", async () => {
+it("POST /groups creates a group with the caller as admin and a viewer-specific default name (multipart string booleans)", async () => {
   const alice = await makeUser("alice");
   const bob = await makeUser("bob");
   const res = await request(app).post("/groups").set(auth(alice.token))
     .field("memberIds", JSON.stringify([bob.user.id, bob.user.id])).field("directMsg", "false");
   expect(res.status).toBe(201);
   expect(res.body.members).toHaveLength(2);
-  expect(res.body.name).toBe("alice & bob");
+  expect(res.body.name).toBe("bob");
   const g = await prisma.group.findUniqueOrThrow({ where: { id: res.body.id }, include: { admins: true } });
   expect(g.admins.map((a) => a.id)).toEqual([alice.user.id]);
 });
@@ -62,6 +62,15 @@ it("GET /groups lists the caller's chats named for the caller", async () => {
   expect(res.body).toHaveLength(1);
   expect(res.body[0]).toMatchObject({ name: "bob", messages: [] });
   expect(res.body[0].members[0]).not.toHaveProperty("password");
+});
+
+it("an unnamed group is named per viewer, excluding the viewer", async () => {
+  const alice = await makeUser("alice");
+  const bob = await makeUser("bob");
+  const carol = await makeUser("carol");
+  await request(app).post("/groups").set(auth(alice.token)).send({ memberIds: [bob.user.id, carol.user.id], directMsg: false });
+  const res = await request(app).get("/groups").set(auth(bob.token));
+  expect(res.body[0].name).toBe("alice & carol");
 });
 
 it("GET /groups/:id as a non-member returns 403, as a member the profile, missing 404", async () => {
