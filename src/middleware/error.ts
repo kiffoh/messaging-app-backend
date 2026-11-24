@@ -19,6 +19,11 @@ export const handleError = (err: unknown, req: Request, res: Response, next: Nex
     if (createError.isHttpError(err)) {
         return res.status(err.status).json({ message: err.expose ? err.message : "Internal Server Error" });
     }
+    // Cloudinary rejects bad uploads with a plain object carrying an http_code
+    const code = (err as { http_code?: unknown } | null)?.http_code;
+    if (typeof code === "number" && code >= 400 && code < 500) {
+        return res.status(code).json({ message: (err as { message?: string }).message ?? "Bad Request" });
+    }
     console.error(err);
     res.status(500).json({ message: "Internal Server Error" });
 };

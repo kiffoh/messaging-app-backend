@@ -5,7 +5,7 @@ extendZodWithOpenApi(z);
 
 export const id = z.number().int();
 // Path params arrive as strings, so they need coercing
-export const idParam = z.coerce.number().int().positive();
+export const idParam = z.coerce.number().int().positive().max(2147483647);
 // A list of ids, or the JSON string of one (multipart forms can't send arrays)
 export const idList = z.preprocess(
   (v) => {
