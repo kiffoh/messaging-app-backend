@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { id, idParam, dateTime, binary } from "../lib/schemas.js";
-import { user } from "./user.js";
+import { user } from "../modules/users/users.schemas.js";
 import { groupSchema } from "../middleware/validation.js";
 import { message } from "./message.js";
 

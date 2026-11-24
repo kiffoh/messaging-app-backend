@@ -3,6 +3,7 @@ import { it, expect, vi } from "vitest";
 import { app } from "../../src/app.js";
 import { signToken, verifyToken } from "../../src/lib/token.js";
 import { resetDb } from "../helpers/db.js";
+import { makeUser } from "../helpers/factories.js";
 
 it("unknown route returns 404 json", async () => {
   const res = await request(app).get("/nope");
@@ -16,7 +17,9 @@ it("resetDb refuses the dev database", async () => {
 });
 
 it("non-numeric id param returns 400 validation shape", async () => {
-  const res = await request(app).get("/users/abc/profile");
+  await resetDb();
+  const { token } = await makeUser();
+  const res = await request(app).get("/users/abc").set("Authorization", `Bearer ${token}`);
   expect(res.status).toBe(400);
   expect(res.body.errors[0].field).toBe("userId");
 });

@@ -37,6 +37,12 @@ it("login returns 200 with token and a user without password", async () => {
   expect(res.body.user).not.toHaveProperty("password");
 });
 
+it("login trims the username", async () => {
+  await makeUser("alice");
+  const res = await request(app).post("/auth/login").send({ username: "alice ", password: "password" });
+  expect(res.body.user?.username).toBe("alice");
+});
+
 it("login with the wrong password returns 401", async () => {
   await makeUser("alice");
   const res = await request(app).post("/auth/login").send({ username: "alice", password: "nope" });

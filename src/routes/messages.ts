@@ -2,7 +2,7 @@ import * as messageController from "../controllers/messages.controller.js";
 import { uploadMessagePhoto } from "../middleware/upload.js";
 import { defineRoute } from "../openapi/defineRoute.js";
 import { messageOnly, formBody, jsonBody, jsonResponse } from "../lib/schemas.js";
-import { userIdParams } from "../schemas/user.js";
+import { userIdParams } from "../modules/users/users.schemas.js";
 import { groupWithMembersAndMessages } from "../schemas/group.js";
 import * as s from "../schemas/message.js";
 import { z } from "zod";

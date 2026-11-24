@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { id, dateTime } from "../../lib/schemas.js";
 
+export const username = z.string().trim().min(1, "Username is required.").max(10, "Username must be a maximum of 10 characters.");
+
 export const signUpBody = z.object({
-  username: z.string().trim().min(1, "Username is required.").max(10, "Username must be a maximum of 10 characters."),
+  username,
   password: z.string().min(1, "Password is required."),
 });
-export const logInBody = z.object({ username: z.string(), password: z.string() });
+export const logInBody = z.object({ username: z.string().trim(), password: z.string() });
 
 const user = z.object({
   id,

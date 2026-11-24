@@ -14,7 +14,7 @@ import swaggerUi from 'swagger-ui-express';
 import { openApiDocument } from './openapi/document.js';
 import { mountRoutes } from './openapi/defineRoute.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
-import { userRoutes } from './routes/users.js';
+import { userRoutes } from './modules/users/users.routes.js';
 import { messageRoutes } from './routes/messages.js';
 import { groupRoutes } from './routes/groups.js';
 
