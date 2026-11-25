@@ -87,5 +87,6 @@ it("disconnects a socket when its token expires", async () => {
   const user = await makeUser("alice");
   const token = jwt.sign({ id: user.user.id }, env.SECRET_KEY, { expiresIn: "1s" });
   const s = await open({ token });
-  await new Promise((r) => s.once("disconnect", r));
+  const reason = await new Promise((r) => s.once("disconnect", r));
+  expect(reason).toBe("io server disconnect");
 }, 2500);
