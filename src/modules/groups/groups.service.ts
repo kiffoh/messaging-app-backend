@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { BadRequestError, ForbiddenError, NotFoundError } from "../../lib/errors.js";
 import { env } from "../../config/env.js";
 import { prisma } from "../../lib/prisma.js";
@@ -83,26 +84,32 @@ export async function createChat(
   const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, username: true } });
   if (users.length !== ids.length) throw new NotFoundError("User not found.");
 
-  if (directMsg) {
-    const existing = await prisma.group.findFirst({
-      where: { directMsg: true, AND: [{ members: { some: { id: callerId } } }, { members: { some: { id: memberIds[0] } } }, { members: { every: { id: { in: [callerId, memberIds[0]] } } } }] },
+  const create = (db: Prisma.TransactionClient) =>
+    db.group.create({
+      data: directMsg
+        ? { directMsg, members: { connect: ids.map((id) => ({ id })) } }
+        : {
+            directMsg,
+            name: input.name || undefined, // unnamed chats are named per viewer by nameForViewer
+            bio: input.bio || undefined,
+            photo: input.photo ?? env.DEFAULT_GROUP_PICTURE,
+            members: { connect: ids.map((id) => ({ id })) },
+            admins: { connect: { id: callerId } },
+          },
+      include: chatInclude,
+    });
+
+  if (!directMsg) return { chat: nameForViewer(await create(prisma), callerId), created: true };
+
+  const [lo, hi] = ids.sort((a, b) => a - b) as [number, number];
+  return prisma.$transaction(async (tx) => {
+    // Serialise per pair so concurrent double submits can't both miss the existing DM.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lo}::int, ${hi}::int)`;
+    const existing = await tx.group.findFirst({
+      where: { directMsg: true, AND: [{ members: { some: { id: lo } } }, { members: { some: { id: hi } } }, { members: { every: { id: { in: [lo, hi] } } } }] },
       include: chatInclude,
     });
     if (existing) return { chat: nameForViewer(existing, callerId), created: false };
-  }
-
-  const chat = await prisma.group.create({
-    data: directMsg
-      ? { directMsg, members: { connect: ids.map((id) => ({ id })) } }
-      : {
-          directMsg,
-          name: input.name || undefined, // unnamed chats are named per viewer by nameForViewer
-          bio: input.bio || undefined,
-          photo: input.photo ?? env.DEFAULT_GROUP_PICTURE,
-          members: { connect: ids.map((id) => ({ id })) },
-          admins: { connect: { id: callerId } },
-        },
-    include: chatInclude,
+    return { chat: nameForViewer(await create(tx), callerId), created: true };
   });
-  return { chat: nameForViewer(chat, callerId), created: true };
 }
