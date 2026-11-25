@@ -121,3 +121,20 @@ it("PUT /groups/:id rejects a blank name", async () => {
   const g = await makeGroup({ members: [alice.user.id], admins: [alice.user.id] });
   expect((await request(app).put(`/groups/${g.id}`).set(auth(alice.token)).field("name", "  ")).status).toBe(400);
 });
+
+it("POST /groups rejects a chat with no other member", async () => {
+  const alice = await makeUser("alice");
+  const res = await request(app).post("/groups").set(auth(alice.token)).send({ memberIds: [alice.user.id], directMsg: false });
+  expect(res.status).toBe(400);
+  expect(res.body.message).toBe("A chat needs at least one other member.");
+});
+
+it("POST /groups concurrent identical DMs create one chat", async () => {
+  const alice = await makeUser("alice");
+  const bob = await makeUser("bob");
+  const post = () => request(app).post("/groups").set(auth(alice.token)).send({ memberIds: [bob.user.id], directMsg: true });
+  const [a, b] = await Promise.all([post(), post()]);
+  expect([a.status, b.status].sort()).toEqual([200, 201]);
+  expect(a.body.id).toBe(b.body.id);
+  expect(await prisma.group.count()).toBe(1);
+});

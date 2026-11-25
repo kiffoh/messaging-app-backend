@@ -77,10 +77,9 @@ export async function createChat(
   input: { memberIds: number[]; directMsg: boolean; name?: string; bio?: string; photo?: string },
 ) {
   const { memberIds, directMsg } = input;
-  if (directMsg && (memberIds.length !== 1 || memberIds[0] === callerId)) {
-    throw new BadRequestError("A direct message needs exactly one other member.");
-  }
+  if (directMsg && memberIds.length !== 1) throw new BadRequestError("A direct message needs exactly one other member.");
   const ids = [...new Set([callerId, ...memberIds])];
+  if (ids.length < 2) throw new BadRequestError("A chat needs at least one other member.");
   const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, username: true } });
   if (users.length !== ids.length) throw new NotFoundError("User not found.");
 
