@@ -1,5 +1,5 @@
 import request from "supertest";
-import { it, expect, beforeEach } from "vitest";
+import { it, expect, beforeEach, vi } from "vitest";
 import { app } from "../../src/app.js";
 import { prisma } from "../../src/lib/prisma.js";
 import { resetDb } from "../helpers/db.js";
@@ -64,4 +64,17 @@ it("author can edit (200) and delete (204)", async () => {
   const del = await request(app).delete(`/groups/${group.id}/messages/${msg.id}`).set(auth(alice.token));
   expect(del.status).toBe(204);
   expect(await prisma.message.count()).toBe(0);
+});
+
+it("POST returns 404 when the group is deleted after the membership check", async () => {
+  const { alice, group } = await setup();
+  const realTransaction = prisma.$transaction.bind(prisma) as (...args: unknown[]) => unknown;
+  const spy = vi.spyOn(prisma, "$transaction").mockImplementationOnce(async (...args: unknown[]) => {
+    await prisma.group.delete({ where: { id: group.id } });
+    return realTransaction(...args);
+  });
+  const res = await request(app).post(`/groups/${group.id}/messages`).set(auth(alice.token)).send({ content: "hi" });
+  spy.mockRestore();
+  expect(res.status).toBe(404);
+  expect(res.body.message).toBe("Group not found.");
 });

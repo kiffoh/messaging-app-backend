@@ -27,6 +27,12 @@ const messageGone = (error: unknown) =>
     ? new NotFoundError("Message not found.")
     : error;
 
+// The group can vanish between the membership check and the write (FK violation or missing row)
+const groupGone = (error: unknown) =>
+  error instanceof Prisma.PrismaClientKnownRequestError && (error.code === "P2003" || error.code === "P2025")
+    ? new NotFoundError("Group not found.")
+    : error;
+
 export async function createMessage(callerId: number, groupId: number, input: { content?: string; photoUrl?: string }) {
   const memberIds = await assertMember(groupId, callerId);
   const content = input.content?.trim() || undefined;
@@ -35,7 +41,9 @@ export async function createMessage(callerId: number, groupId: number, input: { 
   const [message] = await prisma.$transaction([
     prisma.message.create({ data: { content, photoUrl: input.photoUrl, groupId, authorId: callerId } }),
     prisma.group.update({ where: { id: groupId }, data: { updatedAt: new Date() } }),
-  ]);
+  ]).catch((e) => {
+    throw groupGone(e);
+  });
   notify(memberIds, "newMessage", message);
   return message;
 }
