@@ -19,6 +19,8 @@ import { messageRoutes } from './modules/messages/messages.routes.js';
 import { groupRoutes } from './modules/groups/groups.routes.js';
 
 const app = express();
+// Render terminates TLS in one proxy; trust it so req.ip is the client, not the proxy.
+app.set("trust proxy", 1);
 
 const server = http.createServer(app);
 io.attach(server, {

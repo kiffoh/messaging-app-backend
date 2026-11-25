@@ -2,12 +2,16 @@ import jwt from "jsonwebtoken";
 import request from "supertest";
 import { it, expect, beforeEach } from "vitest";
 import { app } from "../../src/app.js";
+import { authLimiter } from "../../src/modules/auth/auth.routes.js";
 import { verifyToken } from "../../src/lib/token.js";
 import { UnauthorizedError } from "../../src/lib/errors.js";
 import { resetDb } from "../helpers/db.js";
 import { makeUser } from "../helpers/factories.js";
 
-beforeEach(resetDb);
+beforeEach(async () => {
+  await resetDb();
+  await authLimiter.resetKey("127.0.0.1");
+});
 
 const signup = (username: string, password = "password") =>
   request(app).post("/auth/signup").send({ username, password });
@@ -65,4 +69,13 @@ it("a token signed with another secret is rejected", async () => {
 
 it("verifyToken rejects garbage as unauthorized", () => {
   expect(() => verifyToken("garbage")).toThrow(UnauthorizedError);
+});
+
+it("the 21st auth request from one IP returns 429", async () => {
+  for (let i = 0; i < 20; i++) {
+    expect((await request(app).post("/auth/login").send({ username: "x", password: "y" })).status).toBe(401);
+  }
+  const res = await request(app).post("/auth/login").send({ username: "x", password: "y" });
+  expect(res.status).toBe(429);
+  expect(res.body).toEqual({ message: "Too many attempts, please try again later." });
 });

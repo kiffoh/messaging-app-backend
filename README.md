@@ -52,8 +52,8 @@ Every route needs `Authorization: Bearer <jwt>` except the two auth routes. The 
 
 | Method and path | Body | Success | Errors |
 |---|---|---|---|
-| `POST /auth/signup` | `{username (1-10 chars), password}` | 201 `{token, user}` | 400, 409 |
-| `POST /auth/login` | `{username, password}` | 200 `{token, user}` | 401 |
+| `POST /auth/signup` | `{username (1-10 chars), password}` | 201 `{token, user}` | 400, 409, 429 |
+| `POST /auth/login` | `{username, password}` | 200 `{token, user}` | 400, 401, 429 |
 | `GET /users` | | 200 `[{id, username, photo}]` | |
 | `GET /users/:id` | | 200 user profile with `contacts` | 404 |
 | `PUT /users/:id` | multipart `{username?, bio?, photo?}` | 200 user profile | 403 not self, 409 |
@@ -64,20 +64,23 @@ Every route needs `Authorization: Bearer <jwt>` except the two auth routes. The 
 | `GET /groups/:id` | | 200 group with `members`, `admins` | 403 non-member, 404 |
 | `PUT /groups/:id` | multipart `{name?, bio?, photo?}` | 200 group | 403 non-admin, 404 |
 | `DELETE /groups/:id` | | 204, its messages are deleted too | 403 non-admin, 404 |
-| `POST /groups/:id/messages` | multipart `{content?, photo?}` | 201 message | 400 empty, 403 non-member |
+| `POST /groups/:id/messages` | multipart `{content?, photo?}` | 201 message | 400 empty, 403 non-member, 404 |
 | `PUT /groups/:id/messages/:messageId` | `{content}` | 200 message | 403 non-author, 404 |
 | `DELETE /groups/:id/messages/:messageId` | | 204 | 403 non-author, 404 |
 
 Notes:
+- `POST /auth/*` allows 20 requests per 15 minutes per IP (shared by signup and login), then returns 429 `{message}`. Standard `RateLimit-*` headers are sent.
+- `DELETE /users/:id`: groups you were the sole admin of pass to another member, and groups left empty are deleted.
+- `POST /groups/:id/messages` returns 404 if the group no longer exists.
 - `PUT /users/:id/contacts` adds the given users to the existing contacts.
-- `POST /groups`: the caller is always added as a member. For a direct message (`directMsg: true`), `memberIds` must hold exactly one id, and `name`, `bio` and `photo` are ignored. For a group the caller becomes admin, and an empty name defaults to the member usernames. In multipart requests send `memberIds` as a JSON string (`"[2,3]"`) and `directMsg` as `"true"` or `"false"`.
+- `POST /groups`: the caller is always added as a member. For a direct message (`directMsg: true`), `memberIds` must hold exactly one id (not yours: a chat with no other member is 400), concurrent requests for the same pair return the same chat, and `name`, `bio` and `photo` are ignored. For a group the caller becomes admin, and an empty name defaults to the member usernames. In multipart requests send `memberIds` as a JSON string (`"[2,3]"`) and `directMsg` as `"true"` or `"false"`.
 - `GET /groups` names unnamed chats for the caller: a DM shows the other member's username and photo.
 - A message needs text, a photo or both. User, group and message responses never include passwords.
 - Errors are `{message}`. Validation errors (400) are `{message: "Validation failed", errors: [{field, message}]}`.
 - User and group profiles also carry `createdAtDate` (`dd-mm-yyyy`) and `createdAtTime` (`hh:mm`), both UTC.
 
 ### Socket.IO
-Connect with the token: `io(url, { auth: { token } })`. An invalid token is rejected with `unauthorized`. Each socket joins the room `user:<id>`. The server only emits, clients do not send events. These go to every member of the group, including the sender:
+Connect with the token: `io(url, { auth: { token } })`. An invalid token is rejected with `unauthorized`. The server disconnects a socket when its token expires. Each socket joins the room `user:<id>`. The server only emits, clients do not send events. These go to every member of the group, including the sender:
 
 | Event | Payload |
 |---|---|
