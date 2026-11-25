@@ -3,7 +3,7 @@ import { it, expect, beforeEach } from "vitest";
 import { app } from "../../src/app.js";
 import { prisma } from "../../src/lib/prisma.js";
 import { resetDb } from "../helpers/db.js";
-import { makeUser } from "../helpers/factories.js";
+import { makeUser, makeGroup } from "../helpers/factories.js";
 
 beforeEach(resetDb);
 
@@ -89,4 +89,22 @@ it("PUT /users/:id with a photo for another user returns 403 before any upload",
     .set(auth(token))
     .attach("photo", Buffer.from("x"), "x.png");
   expect(res.status).toBe(403);
+});
+
+it("DELETE /users/:id hands a group's admin role to a remaining member", async () => {
+  const alice = await makeUser("alice");
+  const bob = await makeUser("bob");
+  const group = await makeGroup({ members: [alice.user.id, bob.user.id], admins: [alice.user.id] });
+  expect((await request(app).delete(`/users/${alice.user.id}`).set(auth(alice.token))).status).toBe(204);
+  const after = await prisma.group.findUniqueOrThrow({ where: { id: group.id }, include: { admins: true } });
+  expect(after.admins.map((a) => a.id)).toEqual([bob.user.id]);
+});
+
+it("DELETE /users/:id removes groups left with no members, with their messages", async () => {
+  const alice = await makeUser("alice");
+  const group = await makeGroup({ members: [alice.user.id], admins: [alice.user.id] });
+  await prisma.message.create({ data: { content: "hi", groupId: group.id, authorId: alice.user.id } });
+  expect((await request(app).delete(`/users/${alice.user.id}`).set(auth(alice.token))).status).toBe(204);
+  expect(await prisma.group.count()).toBe(0);
+  expect(await prisma.message.count()).toBe(0);
 });

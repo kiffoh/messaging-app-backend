@@ -36,7 +36,22 @@ export async function updateProfile(callerId: number, id: number, data: { userna
 
 export async function deleteUser(callerId: number, id: number) {
   assertSelf(callerId, id);
-  await prisma.user.deleteMany({ where: { id } });
+  await prisma.$transaction(async (tx) => {
+    const groups = await tx.group.findMany({
+      where: { members: { some: { id } } },
+      select: { id: true, members: { select: { id: true }, orderBy: { id: "asc" } }, admins: { select: { id: true } } },
+    });
+    for (const group of groups) {
+      const others = group.members.filter((m) => m.id !== id);
+      if (!others.length) {
+        await tx.message.deleteMany({ where: { groupId: group.id } });
+        await tx.group.delete({ where: { id: group.id } });
+      } else if (group.admins.length === 1 && group.admins[0]!.id === id) {
+        await tx.group.update({ where: { id: group.id }, data: { admins: { connect: { id: others[0]!.id } } } });
+      }
+    }
+    await tx.user.deleteMany({ where: { id } });
+  });
 }
 
 export async function setContacts(callerId: number, id: number, contactIds: number[]) {
