@@ -39,6 +39,15 @@ it("error handler maps a 4xx http_code (Cloudinary) to that status", () => {
   expect(res.json).toHaveBeenCalledWith({ message: "Invalid image file" });
 });
 
+it("error handler keeps other Cloudinary codes as a generic 500", () => {
+  const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+  const res = { headersSent: false, status: vi.fn().mockReturnThis(), json: vi.fn() };
+  handleError({ http_code: 401, message: "Invalid Signature" }, {} as never, res as never, vi.fn());
+  expect(res.status).toHaveBeenCalledWith(500);
+  expect(res.json).toHaveBeenCalledWith({ message: "Internal Server Error" });
+  spy.mockRestore();
+});
+
 it("signToken/verifyToken round-trip the id", () => {
   const fakeUser = { id: 7, username: "x", bio: null, createdAt: new Date(), photo: null };
   expect(verifyToken(signToken(fakeUser))).toMatchObject({ id: 7 });
