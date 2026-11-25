@@ -10,11 +10,11 @@ export const signToken = (user: Pick<User, "id" | "username" | "bio" | "createdA
   return jwt.sign({ id, username, bio, createdAtDate, createdAtTime, photo }, env.SECRET_KEY, { expiresIn: "1h" });
 };
 
-export const verifyToken = (token: string): { id: number } => {
+export const verifyToken = (token: string): { id: number; exp: number } => {
   try {
     const payload = jwt.verify(token, env.SECRET_KEY);
-    if (typeof payload === "string" || typeof payload.id !== "number") throw new Error("bad claims");
-    return { id: payload.id };
+    if (typeof payload === "string" || typeof payload.id !== "number" || typeof payload.exp !== "number") throw new Error("bad claims");
+    return { id: payload.id, exp: payload.exp };
   } catch {
     throw new UnauthorizedError("Invalid or expired token");
   }

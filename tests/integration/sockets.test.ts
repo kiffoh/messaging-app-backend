@@ -1,7 +1,9 @@
 import request from "supertest";
 import type { AddressInfo } from "node:net";
 import { io as connect, type Socket } from "socket.io-client";
+import jwt from "jsonwebtoken";
 import { it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
+import { env } from "../../src/config/env.js";
 import { app, server } from "../../src/app.js";
 import { io, emitToMembers } from "../../src/lib/io.js";
 import { prisma } from "../../src/lib/prisma.js";
@@ -80,3 +82,10 @@ it("emitToMembers with no members reaches nobody", async () => {
   await new Promise((r) => setTimeout(r, 200));
   expect(spy).not.toHaveBeenCalled();
 });
+
+it("disconnects a socket when its token expires", async () => {
+  const user = await makeUser("alice");
+  const token = jwt.sign({ id: user.user.id }, env.SECRET_KEY, { expiresIn: "1s" });
+  const s = await open({ token });
+  await new Promise((r) => s.once("disconnect", r));
+}, 2500);

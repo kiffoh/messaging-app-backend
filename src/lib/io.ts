@@ -6,7 +6,9 @@ export const io = new Server();
 
 io.use((socket, next) => {
   try {
-    socket.data.userId = verifyToken(String(socket.handshake.auth.token)).id;
+    const { id, exp } = verifyToken(String(socket.handshake.auth.token));
+    socket.data.userId = id;
+    socket.data.exp = exp;
     next();
   } catch {
     next(new Error("unauthorized"));
@@ -15,6 +17,8 @@ io.use((socket, next) => {
 
 io.on("connection", (socket) => {
   socket.join(`user:${socket.data.userId}`);
+  const expiry = setTimeout(() => socket.disconnect(true), socket.data.exp * 1000 - Date.now());
+  socket.on("disconnect", () => clearTimeout(expiry));
 });
 
 export const emitToMembers = (memberIds: number[], event: string, payload: unknown) => {
