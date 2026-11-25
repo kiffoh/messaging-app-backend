@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import createError from "http-errors";
+import { UnauthorizedError } from "./errors.js";
 import type { User } from "@prisma/client";
 import { env } from "../config/env.js";
 import { withFormattedDate } from "./users.js";
@@ -16,6 +16,6 @@ export const verifyToken = (token: string): { id: number } => {
     if (typeof payload === "string" || typeof payload.id !== "number") throw new Error("bad claims");
     return { id: payload.id };
   } catch {
-    throw createError(401, "Invalid or expired token");
+    throw new UnauthorizedError("Invalid or expired token");
   }
 };

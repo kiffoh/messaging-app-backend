@@ -1,4 +1,4 @@
-import createError from "http-errors";
+import { ConflictError, ForbiddenError, NotFoundError } from "../../lib/errors.js";
 import { Prisma } from "@prisma/client";
 import { env } from "../../config/env.js";
 import { prisma } from "../../lib/prisma.js";
@@ -7,7 +7,7 @@ import { publicUser, withFormattedDate } from "../../lib/users.js";
 const profileSelect = { ...publicUser, contacts: { select: publicUser } };
 
 export function assertSelf(callerId: number, id: number) {
-  if (callerId !== id) throw createError(403, "You can only change your own account.");
+  if (callerId !== id) throw new ForbiddenError("You can only change your own account.");
 }
 
 export async function listUsers() {
@@ -17,7 +17,7 @@ export async function listUsers() {
 
 export async function getProfile(id: number) {
   const row = await prisma.user.findUnique({ where: { id }, select: profileSelect });
-  if (!row) throw createError(404, "User not found.");
+  if (!row) throw new NotFoundError("User not found.");
   return withFormattedDate(row);
 }
 
@@ -27,8 +27,8 @@ export async function updateProfile(callerId: number, id: number, data: { userna
     return withFormattedDate(await prisma.user.update({ where: { id }, data, select: profileSelect }));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") throw createError(409, "Username already in use. Please try again with a different username");
-      if (error.code === "P2025") throw createError(404, "User not found.");
+      if (error.code === "P2002") throw new ConflictError("Username already in use. Please try again with a different username");
+      if (error.code === "P2025") throw new NotFoundError("User not found.");
     }
     throw error;
   }
@@ -51,7 +51,7 @@ export async function setContacts(callerId: number, id: number, contactIds: numb
   } catch (error) {
     // P2025: the user or one of the contacts doesn't exist
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
-      throw createError(404, "User not found.");
+      throw new NotFoundError("User not found.");
     }
     throw error;
   }

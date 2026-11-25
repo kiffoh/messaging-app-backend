@@ -1,4 +1,4 @@
-import createError from "http-errors";
+import { BadRequestError, ForbiddenError, NotFoundError } from "../../lib/errors.js";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
 import { emitToMembers } from "../../lib/io.js";
@@ -7,8 +7,8 @@ import { assertMember } from "../groups/groups.service.js";
 async function ownMessage(callerId: number, groupId: number, messageId: number) {
   const memberIds = await assertMember(groupId, callerId);
   const message = await prisma.message.findFirst({ where: { id: messageId, groupId } });
-  if (!message) throw createError(404, "Message not found.");
-  if (message.authorId !== callerId) throw createError(403, "You can only change your own messages.");
+  if (!message) throw new NotFoundError("Message not found.");
+  if (message.authorId !== callerId) throw new ForbiddenError("You can only change your own messages.");
   return memberIds;
 }
 
@@ -24,13 +24,13 @@ const notify = (memberIds: number[], event: string, payload: unknown) => {
 // The row can vanish between the ownership check and the write
 const messageGone = (error: unknown) =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025"
-    ? createError(404, "Message not found.")
+    ? new NotFoundError("Message not found.")
     : error;
 
 export async function createMessage(callerId: number, groupId: number, input: { content?: string; photoUrl?: string }) {
   const memberIds = await assertMember(groupId, callerId);
   const content = input.content?.trim() || undefined;
-  if (!content && !input.photoUrl) throw createError(400, "A message needs text or a photo.");
+  if (!content && !input.photoUrl) throw new BadRequestError("A message needs text or a photo.");
   // updatedAt is bumped so GET /groups orders chats by latest activity
   const [message] = await prisma.$transaction([
     prisma.message.create({ data: { content, photoUrl: input.photoUrl, groupId, authorId: callerId } }),

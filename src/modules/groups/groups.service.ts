@@ -1,4 +1,4 @@
-import createError from "http-errors";
+import { BadRequestError, ForbiddenError, NotFoundError } from "../../lib/errors.js";
 import { env } from "../../config/env.js";
 import { prisma } from "../../lib/prisma.js";
 import { publicUser, withFormattedDate } from "../../lib/users.js";
@@ -7,7 +7,7 @@ const members = { select: publicUser };
 const chatInclude = { members, messages: { orderBy: { createdAt: "desc" } } } as const;
 const profileInclude = { members, admins: { select: publicUser } } as const;
 
-const notMember = () => createError(403, "You are not a member of this chat.");
+const notMember = () => new ForbiddenError("You are not a member of this chat.");
 
 export function nameFromMembers(usernames: string[]) {
   if (usernames.length < 2) return usernames[0] ?? "";
@@ -31,7 +31,7 @@ export function nameForViewer<T extends Named>(group: T, viewerId: number): T {
 
 async function load(groupId: number) {
   const group = await prisma.group.findUnique({ where: { id: groupId }, select: { members: { select: { id: true } }, admins: { select: { id: true } } } });
-  if (!group) throw createError(404, "Group not found.");
+  if (!group) throw new NotFoundError("Group not found.");
   return group;
 }
 
@@ -43,7 +43,7 @@ export async function assertMember(groupId: number, userId: number) {
 
 export async function assertAdmin(groupId: number, userId: number) {
   if (!(await load(groupId)).admins.some((a) => a.id === userId)) {
-    throw createError(403, "Only a group admin can do that.");
+    throw new ForbiddenError("Only a group admin can do that.");
   }
 }
 
@@ -58,7 +58,7 @@ export async function listChats(userId: number) {
 
 export async function getProfile(groupId: number, viewerId: number) {
   const group = await prisma.group.findUnique({ where: { id: groupId }, include: profileInclude });
-  if (!group) throw createError(404, "Group not found.");
+  if (!group) throw new NotFoundError("Group not found.");
   if (!group.members.some((m) => m.id === viewerId)) throw notMember();
   return withFormattedDate(nameForViewer(group, viewerId));
 }
@@ -78,11 +78,11 @@ export async function createChat(
 ) {
   const { memberIds, directMsg } = input;
   if (directMsg && (memberIds.length !== 1 || memberIds[0] === callerId)) {
-    throw createError(400, "A direct message needs exactly one other member.");
+    throw new BadRequestError("A direct message needs exactly one other member.");
   }
   const ids = [...new Set([callerId, ...memberIds])];
   const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, username: true } });
-  if (users.length !== ids.length) throw createError(404, "User not found.");
+  if (users.length !== ids.length) throw new NotFoundError("User not found.");
 
   if (directMsg) {
     const existing = await prisma.group.findFirst({

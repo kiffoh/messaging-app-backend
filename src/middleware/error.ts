@@ -2,6 +2,21 @@ import type { Request, Response, NextFunction } from "express";
 import createError from "http-errors";
 import multer from "multer";
 import { ZodError } from "zod";
+import {
+    BadRequestError,
+    UnauthorizedError,
+    ForbiddenError,
+    NotFoundError,
+    ConflictError,
+} from "../lib/errors.js";
+
+const domainStatus = new Map<Function, number>([
+    [BadRequestError, 400],
+    [UnauthorizedError, 401],
+    [ForbiddenError, 403],
+    [NotFoundError, 404],
+    [ConflictError, 409],
+]);
 
 export const handleError = (err: unknown, req: Request, res: Response, next: NextFunction) => {
     if (res.headersSent) return next(err);
@@ -15,6 +30,8 @@ export const handleError = (err: unknown, req: Request, res: Response, next: Nex
     if (err instanceof multer.MulterError) {
         return res.status(err.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({ message: err.message });
     }
+    const status = domainStatus.get(err?.constructor as Function);
+    if (status) return res.status(status).json({ message: (err as Error).message });
     // Errors that carry a status (404s, body-parser failures) are written for clients
     if (createError.isHttpError(err)) {
         return res.status(err.status).json({ message: err.expose ? err.message : "Internal Server Error" });

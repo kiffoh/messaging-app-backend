@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import createError from "http-errors";
+import { ConflictError, UnauthorizedError } from "../../lib/errors.js";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
 import { publicUser } from "../../lib/users.js";
@@ -17,7 +17,7 @@ export async function signUp(username: string, password: string) {
     return { token: signToken(user), user };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw createError(409, "Username already in use. Please try again with a different username");
+      throw new ConflictError("Username already in use. Please try again with a different username");
     }
     throw error;
   }
@@ -28,7 +28,7 @@ export async function logIn(username: string, password: string) {
   // One message for both cases so the response doesn't reveal which usernames exist.
   const ok = await bcrypt.compare(password, row?.password ?? DUMMY_HASH);
   if (!row || !ok) {
-    throw createError(401, "Invalid username or password.");
+    throw new UnauthorizedError("Invalid username or password.");
   }
   const { password: _hash, ...user } = row;
   return { token: signToken(user), user };

@@ -3,6 +3,7 @@ import request from "supertest";
 import { it, expect, beforeEach } from "vitest";
 import { app } from "../../src/app.js";
 import { verifyToken } from "../../src/lib/token.js";
+import { UnauthorizedError } from "../../src/lib/errors.js";
 import { resetDb } from "../helpers/db.js";
 import { makeUser } from "../helpers/factories.js";
 
@@ -62,6 +63,6 @@ it("a token signed with another secret is rejected", async () => {
   expect(res.status).toBe(401);
 });
 
-it("verifyToken rejects garbage with a 401", () => {
-  expect(() => verifyToken("garbage")).toThrow(expect.objectContaining({ status: 401 }));
+it("verifyToken rejects garbage as unauthorized", () => {
+  expect(() => verifyToken("garbage")).toThrow(UnauthorizedError);
 });
