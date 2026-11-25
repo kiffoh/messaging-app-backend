@@ -17,7 +17,7 @@ const uploader = (folder: string) => multer({
         params: {
             folder, // Folder in Cloudinary where files will be stored
             allowed_formats: ['jpg', 'png', 'svg'],
-            public_id: (req: unknown, file: { originalname: string }) => file.originalname.split('.')[0], // Use the original file name
+            // No public_id: Cloudinary generates a unique one, so uploads never overwrite each other.
             // shortcut: multer-storage-cloudinary's types omit `folder`, remove the cast if they add it
         } as any,
     }),
