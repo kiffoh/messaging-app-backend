@@ -11,7 +11,7 @@ The backend is Express 5 and Prisma (PostgreSQL). It exposes a REST API for user
 - **password**: iamaguest
 
 ## Tech
-Node.js 20.6+, Express 5, TypeScript, Prisma, PostgreSQL, Socket.IO, Zod, Multer with Cloudinary, Vitest and Supertest. Swagger UI is generated from the Zod schemas.
+Node.js 24, Express 5, TypeScript, Prisma, PostgreSQL, Socket.IO, Zod, Multer with Cloudinary, Vitest and Supertest. Swagger UI is generated from the Zod schemas.
 
 ## Setup
 ```bash
