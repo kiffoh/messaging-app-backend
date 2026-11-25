@@ -27,7 +27,14 @@ const uploadGroupPhoto = uploader('group_photos');
 const uploadUserPhoto = uploader('profile_photos');
 const uploadMessagePhoto = uploader('message_photos');
 
+// Fire and forget: the request is already failing, so a leaked photo must not slow or break the response.
+const discardUpload = (file?: Express.Multer.File) => {
+    if (!file) return;
+    cloudinary.uploader.destroy(file.filename).catch((err) => console.error("Failed to discard upload", err));
+};
+
 export {
+    discardUpload,
     uploadGroupPhoto,
     uploadUserPhoto,
     uploadMessagePhoto

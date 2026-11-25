@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import createError from "http-errors";
 import multer from "multer";
 import { ZodError } from "zod";
+import { discardUpload } from "./upload.js";
 import {
     BadRequestError,
     UnauthorizedError,
@@ -20,6 +21,7 @@ const domainStatus = new Map<Function, number>([
 
 export const handleError = (err: unknown, req: Request, res: Response, next: NextFunction) => {
     if (res.headersSent) return next(err);
+    discardUpload(req.file);
 
     if (err instanceof ZodError) {
         return res.status(400).json({
